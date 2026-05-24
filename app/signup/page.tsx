@@ -10,7 +10,7 @@ import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { useDispatch } from "react-redux";
 import { AppDispatch } from "../store/store";
-import authservice from "../appwrite/auth";
+import authservice from "@/app/auth/firebase-auth";
 import { login } from "../store/authSlice";
 import {
   getAuth,

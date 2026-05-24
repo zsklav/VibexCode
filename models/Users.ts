@@ -31,9 +31,11 @@ const SolvedQuestionSchema = new mongoose.Schema({
 
 const UserSchema = new mongoose.Schema(
   {
-    email: { type: String, required: true, unique: true },
+    email: { type: String, required: true, unique: true, lowercase: true, trim: true },
     username: { type: String, required: true, unique: true },
-    password: { type: String, required: true },
+    // Password is optional now that Firebase Auth handles credentials.
+    // Kept for legacy /api/signup bcrypt path if anyone still calls it.
+    password: { type: String },
     name: { type: String, default: "" },
 
     // Status & activity
@@ -44,8 +46,18 @@ const UserSchema = new mongoose.Schema(
     },
     activity: { type: String, default: "" },
 
-    // ✅ Required for Appwrite authentication
-    appwriteId: { type: String, required: true, unique: true },
+    // Legacy: Appwrite user ID (kept for any pre-migration users).
+    // Sparse index allows multiple null values while preserving uniqueness.
+    appwriteId: { type: String, unique: true, sparse: true },
+
+    // New: Firebase Auth UID. Primary external identity going forward.
+    firebaseUid: { type: String, unique: true, sparse: true, index: true },
+
+    // User-editable profile fields (shown on Dashboard ProfileSection).
+    bio: { type: String, default: "", trim: true, maxlength: 280 },
+    location: { type: String, default: "", trim: true, maxlength: 100 },
+    website: { type: String, default: "", trim: true, maxlength: 200 },
+    phone: { type: String, default: "", trim: true, maxlength: 30 },
 
     // ✅ Improved tracking of solved questions with timestamps
     solvedQuestions: [SolvedQuestionSchema],
@@ -102,7 +114,8 @@ UserSchema.methods.addSolvedQuestion = function (
 ) {
   // Check if already solved (avoid duplicates)
   const alreadySolved = this.solvedQuestions.some(
-    (sq: any) => sq.questionId.toString() === questionId
+    (sq: { questionId: { toString(): string } }) =>
+      sq.questionId.toString() === questionId
   );
 
   if (!alreadySolved) {

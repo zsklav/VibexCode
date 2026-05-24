@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
-import authservice from "@/app/appwrite/auth";
+import authservice from "@/app/auth/firebase-auth";
 
 interface Props {
   children: React.ReactNode;

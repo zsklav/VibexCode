@@ -3,159 +3,174 @@
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Tab } from "@headlessui/react";
+import { useSelector } from "react-redux";
 import { cn } from "@/lib/utils";
-import { account, databases, ID } from "@/lib/appwrite";
-import { AppwriteException } from "appwrite";
-import { Loader2, AlertTriangle, LogOut } from "lucide-react"; // For better icons
+import { Loader2, AlertTriangle, LogOut } from "lucide-react";
+import type { RootState } from "../store/store";
 
-// Clan interface matching your Appwrite collection
 interface Clan {
   $id: string;
   name: string;
   tag: string;
   memberCount: number;
+  ownerEmail?: string;
 }
 
-// Environment variables
-const DATABASE_ID = process.env.NEXT_PUBLIC_DATABASE_ID as string;
-const CLANS_COLLECTION_ID = process.env
-  .NEXT_PUBLIC_CLANS_COLLECTION_ID as string;
-const PROFILES_COLLECTION_ID = process.env
-  .NEXT_PUBLIC_PROFILES_COLLECTION_ID as string;
-
 const CommunityConnect: React.FC = () => {
+  const { userData, status: isLoggedIn } = useSelector(
+    (state: RootState) => state.auth
+  );
+  const userEmail = userData?.email ?? null;
+
   const [myClan, setMyClan] = useState<Clan | null>(null);
   const [joinKey, setJoinKey] = useState<string>("");
   const [newClanName, setNewClanName] = useState<string>("");
-  const [userId, setUserId] = useState<string | null>(null); // Store user ID
 
   const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [isSubmitting, setIsSubmitting] = useState<boolean>(false); // For form submissions
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Fetch initial user and clan data
+  // Fetch initial clan data from MongoDB-backed API.
   useEffect(() => {
-    const fetchUserClanData = async () => {
-      try {
-        const currentUser = await account.get();
-        setUserId(currentUser.$id); // Store the user ID
+    let cancelled = false;
 
-        const profile = await databases.getDocument(
-          DATABASE_ID,
-          PROFILES_COLLECTION_ID,
-          currentUser.$id
+    const fetchUserClanData = async () => {
+      if (!isLoggedIn || !userEmail) {
+        setIsLoading(false);
+        return;
+      }
+
+      try {
+        const res = await fetch(
+          `/api/clan?userEmail=${encodeURIComponent(userEmail)}`
         );
 
-        if (profile.clanId) {
-          const clanData = await databases.getDocument(
-            DATABASE_ID,
-            CLANS_COLLECTION_ID,
-            profile.clanId as string
-          );
-          setMyClan(clanData as unknown as Clan);
+        if (res.status === 404) {
+          // Not in a clan — normal state, no error.
+          if (!cancelled) setMyClan(null);
+        } else if (res.ok) {
+          const data = (await res.json()) as Clan;
+          if (!cancelled) setMyClan(data);
+        } else {
+          const body = await res.json().catch(() => ({}));
+          if (!cancelled)
+            setError(
+              body?.message ||
+                "Could not load your community information. Please try refreshing."
+            );
         }
       } catch (err) {
-        // This catch block is for genuine errors, not for users who aren't in a clan.
-        if (err instanceof AppwriteException && err.code !== 404) {
-          console.error("Failed to fetch user clan data:", err);
+        console.error("Failed to fetch user clan data:", err);
+        if (!cancelled)
           setError(
             "Could not load your community information. Please try refreshing."
           );
-        }
       } finally {
-        setIsLoading(false);
+        if (!cancelled) setIsLoading(false);
       }
     };
 
     fetchUserClanData();
-  }, []);
+    return () => {
+      cancelled = true;
+    };
+  }, [isLoggedIn, userEmail]);
 
   // --- API HANDLERS ---
 
   const handleJoinClan = async () => {
-    if (!joinKey.trim() || !userId) return;
+    if (!joinKey.trim() || !userEmail) return;
     setIsSubmitting(true);
     setError(null);
 
     try {
-      await databases.updateDocument(
-        DATABASE_ID,
-        PROFILES_COLLECTION_ID,
-        userId,
-        { clanId: joinKey.trim() }
+      const joinRes = await fetch("/api/clan/join", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userEmail, clanId: joinKey.trim() }),
+      });
+      const joinBody = await joinRes.json().catch(() => ({}));
+      if (!joinRes.ok) {
+        throw new Error(joinBody?.message || "Failed to join clan.");
+      }
+
+      const clanRes = await fetch(
+        `/api/clan/${encodeURIComponent(joinKey.trim())}`
       );
-      const clanData = await databases.getDocument(
-        DATABASE_ID,
-        CLANS_COLLECTION_ID,
-        joinKey.trim()
-      );
-      setMyClan(clanData as unknown as Clan);
+      if (clanRes.ok) {
+        const clanData = (await clanRes.json()) as Clan;
+        setMyClan(clanData);
+      }
       setJoinKey("");
     } catch (err) {
-      setError(
-        err instanceof AppwriteException ? err.message : "Failed to join clan."
-      );
+      setError(err instanceof Error ? err.message : "Failed to join clan.");
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const handleCreateClan = async () => {
-    if (!newClanName.trim() || !userId) return;
+    if (!newClanName.trim() || !userEmail) return;
     setIsSubmitting(true);
     setError(null);
 
     try {
-      const tag = newClanName.trim().substring(0, 4).toUpperCase();
-      const newClan = await databases.createDocument(
-        DATABASE_ID,
-        CLANS_COLLECTION_ID,
-        ID.unique(),
-        { name: newClanName.trim(), tag, memberCount: 1 }
-      );
-      await databases.updateDocument(
-        DATABASE_ID,
-        PROFILES_COLLECTION_ID,
-        userId,
-        { clanId: newClan.$id }
-      );
-      setMyClan(newClan as unknown as Clan);
+      const res = await fetch("/api/clan/create", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userEmail, name: newClanName.trim() }),
+      });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(body?.message || "Failed to create clan.");
+      }
+      setMyClan(body as Clan);
       setNewClanName("");
     } catch (err) {
-      setError(
-        err instanceof AppwriteException
-          ? err.message
-          : "Failed to create clan."
-      );
+      setError(err instanceof Error ? err.message : "Failed to create clan.");
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const handleLeaveClan = async () => {
-    if (!userId) return;
+    if (!userEmail) return;
     if (!window.confirm("Are you sure you want to leave this clan?")) return;
     setIsSubmitting(true);
     setError(null);
 
     try {
-      await databases.updateDocument(
-        DATABASE_ID,
-        PROFILES_COLLECTION_ID,
-        userId,
-        { clanId: null }
-      );
-      setMyClan(null); // Update UI immediately
+      const res = await fetch("/api/clan/leave", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userEmail }),
+      });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(body?.message || "Failed to leave clan.");
+      }
+      setMyClan(null);
     } catch (err) {
-      setError(
-        err instanceof AppwriteException ? err.message : "Failed to leave clan."
-      );
+      setError(err instanceof Error ? err.message : "Failed to leave clan.");
     } finally {
       setIsSubmitting(false);
     }
   };
 
   // --- RENDER STATES ---
+
+  if (!isLoggedIn || !userEmail) {
+    return (
+      <div className="w-full max-w-md mx-auto bg-white dark:bg-slate-800 rounded-2xl shadow-xl p-6 border text-center">
+        <h3 className="text-lg font-semibold mb-2 text-gray-800 dark:text-white">
+          Community Connect
+        </h3>
+        <p className="text-gray-600 dark:text-slate-300 text-sm">
+          Log in to join or create a clan.
+        </p>
+      </div>
+    );
+  }
 
   if (isLoading) {
     return (
@@ -200,7 +215,15 @@ const CommunityConnect: React.FC = () => {
           {["My Clan", "Join Clan", "Create Clan"].map((tab) => (
             <Tab
               key={tab}
-              className={({ selected }) => cn(/* ...cn styles... */)}
+              className={({ selected }) =>
+                cn(
+                  "w-full rounded-lg py-2 text-sm font-medium leading-5 transition",
+                  "focus:outline-none focus:ring-2 focus:ring-purple-500/40",
+                  selected
+                    ? "bg-white text-purple-700 shadow dark:bg-gray-800 dark:text-purple-300"
+                    : "text-gray-700 hover:bg-white/40 dark:text-gray-300 dark:hover:bg-gray-600/40"
+                )
+              }
             >
               {tab}
             </Tab>
@@ -235,7 +258,7 @@ const CommunityConnect: React.FC = () => {
               </div>
             ) : (
               <p className="text-center text-gray-500 py-8">
-                You're not in a clan yet. Join or create one!
+                You&apos;re not in a clan yet. Join or create one!
               </p>
             )}
           </Tab.Panel>

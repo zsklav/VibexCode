@@ -1,6 +1,20 @@
 // lib/judge0.ts
 
-export const runJudge0Advanced = async (code: string, languageId: number) => {
+export type Judge0Result = {
+  stdout?: string;
+  stderr?: string;
+  compile_output?: string;
+  time?: string | number;
+  memory?: number | string;
+  status?: { id: number; description: string };
+  error?: string;
+  errorCode?: string;
+};
+
+export const runJudge0Advanced = async (
+  code: string,
+  languageId: number
+): Promise<Judge0Result> => {
   try {
     // Submit code
     const submitRes = await fetch("/api/judge0/submit", {
@@ -15,7 +29,13 @@ export const runJudge0Advanced = async (code: string, languageId: number) => {
     });
 
     if (!submitRes.ok) {
-      throw new Error(`Submit failed: ${submitRes.status}`);
+      const body = await submitRes.json().catch(() => ({}));
+      return {
+        error:
+          body?.error ||
+          `Code execution failed (HTTP ${submitRes.status}).`,
+        errorCode: body?.code,
+      };
     }
 
     const { token } = await submitRes.json();
@@ -30,23 +50,33 @@ export const runJudge0Advanced = async (code: string, languageId: number) => {
       const resultRes = await fetch(`/api/judge0/result/${token}`);
 
       if (!resultRes.ok) {
-        throw new Error(`Result fetch failed: ${resultRes.status}`);
+        const body = await resultRes.json().catch(() => ({}));
+        return {
+          error:
+            body?.error ||
+            `Code execution result fetch failed (HTTP ${resultRes.status}).`,
+          errorCode: body?.code,
+        };
       }
 
-      const result = await resultRes.json();
+      const result = (await resultRes.json()) as Judge0Result;
 
-      // Check if execution is complete
-      if (result.status.id > 2) {
-        // Status > 2 means completed
+      // Status > 2 means execution is complete (1=in queue, 2=processing).
+      if (result.status && result.status.id > 2) {
         return result;
       }
 
       attempts++;
     }
 
-    return { stderr: "❌ Execution timeout" };
+    return { stderr: "❌ Execution timeout — Judge0 took longer than 10s." };
   } catch (err) {
     console.error("Error calling Judge0 API:", err);
-    return { stderr: "❌ Failed to execute code. Please try again." };
+    return {
+      error:
+        err instanceof Error
+          ? err.message
+          : "Failed to execute code. Please try again.",
+    };
   }
 };

@@ -1,36 +1,53 @@
 import { NextRequest, NextResponse } from "next/server";
-// Using the client-side import as requested.
-import { databases } from "@/lib/appwrite";
+import { isValidObjectId } from "mongoose";
+import connectDB from "@/lib/mongodb";
+import Clans from "@/models/Clans";
+import ClanMembers from "@/models/ClanMembers";
 
-const DATABASE_ID = process.env.NEXT_PUBLIC_DATABASE_ID as string;
-const PROFILES_COLLECTION_ID = process.env
-  .NEXT_PUBLIC_PROFILES_COLLECTION_ID as string;
+export const runtime = "nodejs";
 
-// POST to join a clan
 export async function POST(request: NextRequest) {
   try {
-    const { userId, clanId } = await request.json();
+    const { userEmail, clanId } = await request.json();
 
-    if (!userId || !clanId) {
+    if (!userEmail || !clanId) {
       return NextResponse.json(
-        { message: "User ID and Clan ID are required" },
+        { message: "userEmail and clanId are required" },
+        { status: 400 }
+      );
+    }
+    if (!isValidObjectId(clanId)) {
+      return NextResponse.json(
+        { message: "Invalid clan ID" },
         { status: 400 }
       );
     }
 
-    // ⚠️ This may fail if the Appwrite instance is not authenticated
-    await databases.updateDocument(
-      DATABASE_ID,
-      PROFILES_COLLECTION_ID,
-      userId,
-      { clanId }
-    );
+    await connectDB();
+    const email = userEmail.toLowerCase();
+
+    const clan = await Clans.findById(clanId);
+    if (!clan) {
+      return NextResponse.json(
+        { message: "Clan not found" },
+        { status: 404 }
+      );
+    }
+
+    const existing = await ClanMembers.findOne({ email });
+    if (existing) {
+      return NextResponse.json(
+        { message: "User is already in a clan" },
+        { status: 409 }
+      );
+    }
+
+    await ClanMembers.create({ email, clanId: clan._id });
 
     return NextResponse.json({ message: "Successfully joined clan" });
-  } catch (error: unknown) {
+  } catch (error) {
     const errMessage =
-      error instanceof Error ? error.message : "Unknown error occurred";
-
+      error instanceof Error ? error.message : "Unknown error";
     return NextResponse.json(
       { message: "Failed to join clan", error: errMessage },
       { status: 500 }

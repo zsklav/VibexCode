@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import connectDB from "@/lib/mongodb";
 import Questions from "@/models/Questions";
+import { isAdminEmail } from "@/lib/auth";
 import { Types } from "mongoose";
 
 type LeanQuestion = {
@@ -31,6 +32,16 @@ export async function POST(req: Request) {
   try {
     await connectDB();
     const data = await req.json();
+
+    // Admin gate. See lib/auth.ts for the security caveat — userEmail comes
+    // from the client and can be spoofed until we move to server-verified
+    // tokens. Sufficient for stopping accidental misuse via the UI.
+    if (!isAdminEmail(data.userEmail)) {
+      return NextResponse.json(
+        { success: false, error: "Only admins can create questions" },
+        { status: 403 }
+      );
+    }
 
     const {
       title,

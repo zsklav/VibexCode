@@ -1,6 +1,10 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useSelector } from "react-redux";
+import { doc, getDoc } from "firebase/firestore";
+import { db } from "@/lib/firebase";
+import type { RootState } from "../store/store";
 import Navbar from "../components/Navbar";
 
 type Question = {
@@ -25,6 +29,10 @@ export default function ProblemsPage() {
   const [selectedDifficulty, setSelectedDifficulty] = useState("");
   const [expandedQuestions, setExpandedQuestions] = useState<Set<string>>(
     new Set()
+  );
+  const [solvedSet, setSolvedSet] = useState<Set<string>>(new Set());
+  const { userData, status: isLoggedIn } = useSelector(
+    (state: RootState) => state.auth
   );
   const [tagSearch, setTagSearch] = useState("");
   const [showTagDropdown, setShowTagDropdown] = useState(false);
@@ -87,6 +95,33 @@ export default function ProblemsPage() {
 
     fetchQuestions();
   }, []);
+
+  // Pull the current user's solved-question IDs from the Firestore
+  // leaderboard doc so we can render the "✓ Solved" badge.
+  useEffect(() => {
+    if (!isLoggedIn || !userData?.email) {
+      setSolvedSet(new Set());
+      return;
+    }
+    let cancelled = false;
+    const fetchSolved = async () => {
+      try {
+        const snap = await getDoc(doc(db, "leaderboard", userData.email));
+        if (cancelled) return;
+        const data = snap.data();
+        const ids = Array.isArray(data?.solvedQuestionIds)
+          ? (data!.solvedQuestionIds as string[])
+          : [];
+        setSolvedSet(new Set(ids));
+      } catch (e) {
+        console.warn("Failed to fetch solved set:", e);
+      }
+    };
+    fetchSolved();
+    return () => {
+      cancelled = true;
+    };
+  }, [isLoggedIn, userData?.email]);
 
   // Filter questions
   useEffect(() => {
@@ -368,16 +403,12 @@ export default function ProblemsPage() {
           {!loading && !error && questions.length === 0 && (
             <div className="text-center py-12">
               <div className="text-6xl mb-4">📝</div>
-              <h2 className="text-2xl font-semibold mb-2">No questions yet</h2>
-              <p className="text-gray-600 dark:text-gray-400 mb-6">
-                Be the first to submit a question to the community!
+              <h2 className="text-2xl font-semibold mb-2">
+                No problems available yet
+              </h2>
+              <p className="text-gray-600 dark:text-gray-400">
+                Check back soon — new challenges are added regularly.
               </p>
-              <a
-                href="/submit"
-                className="inline-block bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg transition-colors font-medium"
-              >
-                Submit First Question
-              </a>
             </div>
           )}
 
@@ -437,6 +468,14 @@ export default function ProblemsPage() {
                         <h2 className="text-xl font-semibold text-blue-600 dark:text-blue-400 leading-tight">
                           {q.title}
                         </h2>
+                        {solvedSet.has(q._id) && (
+                          <span
+                            className="text-xs px-2 py-1 rounded font-bold uppercase bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300"
+                            title="You've solved this"
+                          >
+                            ✓ Solved
+                          </span>
+                        )}
                       </div>
                       {q.createdAt && (
                         <time className="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap ml-4">

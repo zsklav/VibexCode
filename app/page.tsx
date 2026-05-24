@@ -6,7 +6,7 @@ import "aos/dist/aos.css";
 import Image from "next/image";
 import Link from "next/link";
 import Navbar from "./components/Navbar";
-import authservice from "./appwrite/auth";
+import authservice from "@/app/auth/firebase-auth";
 import { motion } from "framer-motion";
 import { useSelector } from "react-redux";
 import { RootState } from "./store/store";

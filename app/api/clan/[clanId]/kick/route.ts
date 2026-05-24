@@ -1,36 +1,69 @@
 import { NextRequest, NextResponse } from "next/server";
-// Using the client-side import as requested.
-import { databases } from "@/lib/appwrite";
+import { isValidObjectId } from "mongoose";
+import connectDB from "@/lib/mongodb";
+import Clans from "@/models/Clans";
+import ClanMembers from "@/models/ClanMembers";
 
-const DATABASE_ID = process.env.NEXT_PUBLIC_DATABASE_ID as string;
-const PROFILES_COLLECTION_ID = process.env
-  .NEXT_PUBLIC_PROFILES_COLLECTION_ID as string;
+export const runtime = "nodejs";
 
-// POST to kick a member from a clan
-export async function POST(request: NextRequest) {
+export async function POST(
+  request: NextRequest,
+  { params }: { params: Promise<{ clanId: string }> }
+) {
   try {
-    const { userIdToKick } = await request.json();
+    const { clanId } = await params;
+    const { ownerEmail, memberEmailToKick } = await request.json();
 
-    if (!userIdToKick) {
+    if (!ownerEmail || !memberEmailToKick) {
       return NextResponse.json(
-        { message: "User ID to kick is required" },
+        { message: "ownerEmail and memberEmailToKick are required" },
+        { status: 400 }
+      );
+    }
+    if (!isValidObjectId(clanId)) {
+      return NextResponse.json(
+        { message: "Invalid clan ID" },
         { status: 400 }
       );
     }
 
-    // ⚠️ This may fail if your Appwrite instance isn’t authenticated with admin permissions
-    await databases.updateDocument(
-      DATABASE_ID,
-      PROFILES_COLLECTION_ID,
-      userIdToKick,
-      { clanId: null }
-    );
+    await connectDB();
+
+    const clan = await Clans.findById(clanId);
+    if (!clan) {
+      return NextResponse.json(
+        { message: "Clan not found" },
+        { status: 404 }
+      );
+    }
+
+    if (clan.ownerEmail !== ownerEmail.toLowerCase()) {
+      return NextResponse.json(
+        { message: "Only the clan owner can kick members" },
+        { status: 403 }
+      );
+    }
+
+    const targetEmail = memberEmailToKick.toLowerCase();
+    if (targetEmail === clan.ownerEmail) {
+      return NextResponse.json(
+        { message: "The owner cannot kick themselves" },
+        { status: 400 }
+      );
+    }
+
+    const result = await ClanMembers.deleteOne({ email: targetEmail, clanId });
+    if (result.deletedCount === 0) {
+      return NextResponse.json(
+        { message: "User is not a member of this clan" },
+        { status: 404 }
+      );
+    }
 
     return NextResponse.json({ message: "Successfully kicked user" });
-  } catch (error: unknown) {
+  } catch (error) {
     const errMessage =
-      error instanceof Error ? error.message : "Unknown error occurred";
-
+      error instanceof Error ? error.message : "Unknown error";
     return NextResponse.json(
       { message: "Failed to kick user", error: errMessage },
       { status: 500 }

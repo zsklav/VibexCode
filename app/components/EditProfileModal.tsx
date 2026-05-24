@@ -15,9 +15,9 @@ interface UserProfile {
   profileImage?: string;
   stats: {
     rank: number;
-    rating: number;
+    points: number;
     streak: number;
-    badges: number;
+    solved: number;
     level: string;
     completed: number;
     total: number;
@@ -76,12 +76,19 @@ const EditProfileModal = ({
   const handleSave = async () => {
     try {
       setIsLoading(true);
-      await onSave(editData);
+      // Email is immutable (it's the identity key) — strip it before sending.
+      const { email: _email, stats: _stats, id: _id, ...editable } = editData;
+      void _email;
+      void _stats;
+      void _id;
+      await onSave(editable);
       setImagePreview("");
       onClose();
     } catch (error) {
       console.error("Failed to update profile:", error);
-      alert("Failed to update profile.");
+      const message =
+        error instanceof Error ? error.message : "Failed to update profile.";
+      alert(message);
     } finally {
       setIsLoading(false);
     }
@@ -169,15 +176,16 @@ const EditProfileModal = ({
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Email
+              Email{" "}
+              <span className="text-xs font-normal text-gray-400">
+                (cannot be changed)
+              </span>
             </label>
             <input
               type="email"
               value={editData.email || ""}
-              onChange={(e) => handleEditChange("email", e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              disabled={isLoading}
-              placeholder="Enter your email"
+              readOnly
+              className="w-full px-3 py-2 border border-gray-200 dark:border-zinc-700 rounded-lg bg-gray-100 dark:bg-zinc-800 text-gray-500 cursor-not-allowed"
             />
           </div>
 

@@ -1,38 +1,52 @@
 import { NextRequest, NextResponse } from "next/server";
-// Using the client-side import as requested.
-import { databases } from "@/lib/appwrite";
+import { isValidObjectId } from "mongoose";
+import connectDB from "@/lib/mongodb";
+import Clans from "@/models/Clans";
+import ClanMembers from "@/models/ClanMembers";
 
-const DATABASE_ID = process.env.NEXT_PUBLIC_DATABASE_ID as string;
-const CLANS_COLLECTION_ID = process.env
-  .NEXT_PUBLIC_CLANS_COLLECTION_ID as string;
+export const runtime = "nodejs";
 
-// GET information for a specific clan
 export async function GET(
-  request: NextRequest,
-  { params }: { params: { clanId: string } }
+  _request: NextRequest,
+  { params }: { params: Promise<{ clanId: string }> }
 ) {
   try {
-    const { clanId } = params;
+    const { clanId } = await params;
 
-    if (!clanId) {
+    if (!clanId || !isValidObjectId(clanId)) {
       return NextResponse.json(
-        { message: "Clan ID is required" },
+        { message: "Invalid clan ID" },
         { status: 400 }
       );
     }
 
-    // ⚠️ May fail if your collection does not allow read access
-    const clanData = await databases.getDocument(
-      DATABASE_ID,
-      CLANS_COLLECTION_ID,
-      clanId
-    );
+    await connectDB();
 
-    return NextResponse.json(clanData);
-  } catch (error: unknown) {
+    const clan = await Clans.findById(clanId).lean<{
+      _id: { toString: () => string };
+      name: string;
+      tag: string;
+      ownerEmail: string;
+    } | null>();
+    if (!clan) {
+      return NextResponse.json(
+        { message: "Clan not found" },
+        { status: 404 }
+      );
+    }
+
+    const memberCount = await ClanMembers.countDocuments({ clanId });
+
+    return NextResponse.json({
+      $id: clan._id.toString(),
+      name: clan.name,
+      tag: clan.tag,
+      memberCount,
+      ownerEmail: clan.ownerEmail,
+    });
+  } catch (error) {
     const errMessage =
-      error instanceof Error ? error.message : "Unknown error occurred";
-
+      error instanceof Error ? error.message : "Unknown error";
     return NextResponse.json(
       { message: "Failed to fetch clan data", error: errMessage },
       { status: 500 }

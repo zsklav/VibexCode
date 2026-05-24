@@ -1,7 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import Navbar from "../components/Navbar";
+import { useSelector } from "react-redux";
+import type { RootState } from "../../../store/store";
+import { isAdminEmail } from "@/lib/auth";
+import Navbar from "../../../components/Navbar";
 
 type QuestionFormFields = {
   title: string;
@@ -11,6 +14,46 @@ type QuestionFormFields = {
 };
 
 export default function SubmitQuestionPage() {
+  const { userData, status: isLoggedIn } = useSelector(
+    (state: RootState) => state.auth
+  );
+  const userIsAdmin = isLoggedIn && isAdminEmail(userData?.email);
+
+  if (!userIsAdmin) {
+    return (
+      <div className="min-h-screen dark:bg-[#020612] text-gray-900 dark:text-white">
+        <Navbar />
+        <main className="max-w-2xl mx-auto px-4 py-20 text-center">
+          <div className="text-6xl mb-4">🔒</div>
+          <h1 className="text-3xl font-bold mb-3">Admins only</h1>
+          <p className="text-gray-600 dark:text-gray-400 mb-6">
+            Only administrators can submit new problems. Head back to{" "}
+            <a
+              href="/problems"
+              className="text-blue-600 hover:underline dark:text-blue-400"
+            >
+              Problems
+            </a>{" "}
+            to solve existing ones.
+          </p>
+          {!isLoggedIn && (
+            <p className="text-sm text-gray-500">
+              Already an admin?{" "}
+              <a href="/login" className="text-blue-600 hover:underline">
+                Log in
+              </a>
+              .
+            </p>
+          )}
+        </main>
+      </div>
+    );
+  }
+
+  return <SubmitQuestionForm userEmail={userData!.email} />;
+}
+
+function SubmitQuestionForm({ userEmail }: { userEmail: string }) {
   const [formData, setFormData] = useState<QuestionFormFields>({
     title: "",
     description: "",
@@ -77,15 +120,9 @@ export default function SubmitQuestionPage() {
       newErrors.description = "Description must be at least 10 characters";
     }
 
-    if (formData.testcases.trim() && formData.testcases.trim().length < 5) {
-      newErrors.testcases =
-        "Test cases must be at least 5 characters if provided";
-    }
-
-    if (formData.solutions.trim() && formData.solutions.trim().length < 5) {
-      newErrors.solutions =
-        "Solutions must be at least 5 characters if provided";
-    }
+    // No minimum length on testcases/solutions — outputs can legitimately
+    // be short (e.g. "15", "yes", "hi") for many problems. Empty is fine
+    // too since these fields are optional.
 
     if (!["easy", "medium", "hard"].includes(difficulty)) {
       newErrors.difficulty = "Invalid difficulty selected";
@@ -109,8 +146,16 @@ export default function SubmitQuestionPage() {
     try {
       const payload = {
         ...formData,
-        tags: tags.filter((tag) => tag.trim() !== ""),
+        // If the user typed a tag but didn't press Space/Enter to commit it,
+        // include it on submit so it isn't silently dropped.
+        tags: [
+          ...tags,
+          ...(currentTag.trim() && !tags.includes(currentTag.trim().toLowerCase())
+            ? [currentTag.trim().toLowerCase()]
+            : []),
+        ].filter((tag) => tag.trim() !== ""),
         difficulty,
+        userEmail,
       };
 
       const res = await fetch("/api/questions", {

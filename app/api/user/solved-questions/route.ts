@@ -1,130 +1,109 @@
 // /app/api/user/solved-questions/route.ts
+//
+// GET /api/user/solved-questions?userEmail=foo@bar.com
+//
+// Returns the user's solved questions grouped by tag (the Questions schema
+// has `tags` and `difficulty`, not a single `category` — we use the first
+// tag as the grouping key, falling back to difficulty).
+//
+// Previously this endpoint verified an Appwrite JWT and looked up the
+// user by appwriteId. It now uses email-based identification — see
+// lib/auth.ts for the security caveat.
 
 import { NextResponse } from "next/server";
+import { isValidObjectId } from "mongoose";
 import connectDB from "@/lib/mongodb";
 import User from "@/models/Users";
 import Questions from "@/models/Questions";
 
-// Interface for the JWT verification response from Appwrite
-interface AppwriteJWTVerifyResponse {
-  userId: string;
-  // Avoid index signature with any; add fields here if needed
-}
-
-// Computed type for the solved questions data by category
 type SolvedQuestionCategory = {
   name: string;
   questionCount: number;
-  progress: number; // Percentage solved in category
+  progress: number;
   questions: string[];
 };
 
-// Helper: Verify Appwrite JWT token via Appwrite REST API
-async function verifyAppwriteJWT(token: string): Promise<AppwriteJWTVerifyResponse> {
-  const res = await fetch(
-    `${process.env.NEXT_PUBLIC_API_ENDPOINT}/v1/account/sessions/jwt/verify`,
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-Appwrite-Project": process.env.NEXT_PUBLIC_PROJECT_ID!,
-        "X-Appwrite-Key": process.env.APPWRITE_API_KEY!, // Server API key (keep secret!)
-      },
-      body: JSON.stringify({ jwt: token }),
-    }
-  );
-  if (!res.ok) {
-    throw new Error("Invalid or expired token");
-  }
-
-  const verified: AppwriteJWTVerifyResponse = await res.json();
-
-  if (!verified.userId || typeof verified.userId !== "string") {
-    throw new Error("Invalid token response structure");
-  }
-
-  return verified;
-}
-
 export async function GET(request: Request) {
   try {
-    const authHeader = request.headers.get("authorization");
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
-      return NextResponse.json({ error: "Missing or invalid auth token" }, { status: 401 });
-    }
-    const token = authHeader.substring(7);
+    const { searchParams } = new URL(request.url);
+    const userEmail = searchParams.get("userEmail");
 
-    // Verify token & get user ID
-    const verified = await verifyAppwriteJWT(token);
-    const appwriteUserId = verified.userId;
-    if (!appwriteUserId) {
-      return NextResponse.json({ error: "User not found in token" }, { status: 401 });
+    if (!userEmail) {
+      return NextResponse.json(
+        { error: "userEmail is required" },
+        { status: 400 }
+      );
     }
 
-    // Connect to DB
     await connectDB();
 
-    // Find user by Appwrite ID
-    const user = await User.findOne({ appwriteId: appwriteUserId });
+    const user = await User.findOne({ email: userEmail.toLowerCase() });
     if (!user) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    const solvedIds = user.solvedQuestions || [];
+    const solvedIds: string[] = (user.solvedQuestionIds || []).filter(
+      (id: string) => isValidObjectId(id)
+    );
 
-    // Fetch solved questions data
-    const solvedQuestions = await Questions.find({ _id: { $in: solvedIds } }).lean();
+    const solvedQuestions = await Questions.find({
+      _id: { $in: solvedIds },
+    }).lean<
+      Array<{
+        _id: unknown;
+        title?: string;
+        tags?: string[];
+        difficulty?: string;
+      }>
+    >();
+    const allQuestions = await Questions.find({}).lean<
+      Array<{ tags?: string[]; difficulty?: string }>
+    >();
 
-    // Fetch all questions for progress calculation
-    const allQuestions = await Questions.find({}).lean();
+    const groupingKey = (q: { tags?: string[]; difficulty?: string }) =>
+      (q.tags && q.tags[0]) || q.difficulty || "uncategorized";
 
-    // Calculate totals per category
     const totalByCategory: Record<string, number> = {};
     allQuestions.forEach((q) => {
-      if (q.category && typeof q.category === "string") {
-        totalByCategory[q.category] = (totalByCategory[q.category] || 0) + 1;
-      }
+      const key = groupingKey(q);
+      totalByCategory[key] = (totalByCategory[key] || 0) + 1;
     });
 
-    // Group solved questions per category
     const categoryMap: Record<
       string,
       { questions: string[]; totalQuestions: number }
     > = {};
 
     solvedQuestions.forEach((q) => {
-      if (!q.category || typeof q.category !== "string") return; // skip if no category or invalid
-      if (!categoryMap[q.category]) {
-        categoryMap[q.category] = {
+      const key = groupingKey(q);
+      if (!categoryMap[key]) {
+        categoryMap[key] = {
           questions: [],
-          totalQuestions: totalByCategory[q.category] || 0,
+          totalQuestions: totalByCategory[key] || 0,
         };
       }
-      categoryMap[q.category].questions.push(q.title || "Untitled");
+      categoryMap[key].questions.push(q.title || "Untitled");
     });
 
-    // Format the output
-    const solvedQuestionsData: SolvedQuestionCategory[] = Object.entries(categoryMap).map(
-      ([category, { questions, totalQuestions }]) => ({
-        name: category,
-        questionCount: questions.length,
-        progress: totalQuestions ? Math.round((questions.length / totalQuestions) * 100) : 0,
-        questions,
-      })
-    );
+    const solvedQuestionsData: SolvedQuestionCategory[] = Object.entries(
+      categoryMap
+    ).map(([category, { questions, totalQuestions }]) => ({
+      name: category,
+      questionCount: questions.length,
+      progress: totalQuestions
+        ? Math.round((questions.length / totalQuestions) * 100)
+        : 0,
+      questions,
+    }));
 
-    return NextResponse.json({ success: true, solvedQuestions: solvedQuestionsData });
+    return NextResponse.json({
+      success: true,
+      solvedQuestions: solvedQuestionsData,
+    });
   } catch (error: unknown) {
     console.error("[GET] /api/user/solved-questions error:", error);
-
     const message =
-      error instanceof Error
-        ? error.message
-        : "Internal server error";
-
-    return NextResponse.json(
-      { error: message },
-      { status: 500 }
-    );
+      error instanceof Error ? error.message : "Internal server error";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

@@ -5,6 +5,14 @@ import { useSearchParams } from "next/navigation";
 import dynamic from "next/dynamic";
 import ReactMarkdown from "react-markdown";
 import { runJudge0Advanced } from "@/lib/judge0";
+import {
+  doc,
+  setDoc,
+  arrayUnion,
+  increment,
+  serverTimestamp,
+} from "firebase/firestore";
+import { db } from "@/lib/firebase";
 import Navbar from "../components/Navbar";
 import SoundBoard from "../components/SoundBoard";
 import Lead from "../components/Lead";
@@ -41,6 +49,12 @@ type Question = {
   description: string;
   testcases?: string;
   solutions?: string;
+  difficulty?: "easy" | "medium" | "hard";
+};
+
+type LastRunStats = {
+  runtimeMs?: number;
+  memoryKb?: number;
 };
 
 const languages = ["Javascript", "Python", "Java", "C++"] as const;
@@ -104,6 +118,7 @@ function PlaygroundContent() {
   const [isCorrect, setIsCorrect] = useState<boolean | null>(null);
   const [diffLines, setDiffLines] = useState<DiffLine[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [lastRunStats, setLastRunStats] = useState<LastRunStats>({});
 
   // Success Modal state
   const [showSuccessModal, setShowSuccessModal] = useState(false); // <-- MODAL
@@ -168,9 +183,26 @@ function PlaygroundContent() {
       } else if (result.compile_output) {
         outputStr = `⚠️ Compile Error:\n${result.compile_output}`;
       } else if (result.stdout) {
+        // Judge0 returns time as a string in seconds (e.g. "0.123"). Convert
+        // to ms for storage so all our metrics are in a single unit.
+        const timeSec =
+          typeof result.time === "string" || typeof result.time === "number"
+            ? parseFloat(String(result.time))
+            : NaN;
+        const runtimeMs = Number.isFinite(timeSec)
+          ? Math.round(timeSec * 1000)
+          : undefined;
+        const memoryKb =
+          typeof result.memory === "number"
+            ? result.memory
+            : typeof result.memory === "string"
+            ? parseInt(result.memory, 10) || undefined
+            : undefined;
+        setLastRunStats({ runtimeMs, memoryKb });
+
         const executionInfo =
           result.time || result.memory
-            ? `\n\n📊 Execution Time: ${result.time || "N/A"}ms | Memory: ${
+            ? `\n\n📊 Execution Time: ${result.time || "N/A"}s | Memory: ${
                 result.memory || "N/A"
               }KB`
             : "";
@@ -246,12 +278,52 @@ function PlaygroundContent() {
           questionTitle: question.title,
           answerMarkdown: answerInput,
           submittedAt: new Date().toISOString(),
+          // Scoring fields (added in A3).
+          passed: isCorrect === true,
+          code,
+          language,
+          difficulty: question.difficulty,
+          runtimeMs: lastRunStats.runtimeMs,
+          memoryKb: lastRunStats.memoryKb,
         }),
       });
       const data = await res.json();
       if (!res.ok || !data.success) {
         throw new Error(data.error || "Failed to submit answer");
       }
+
+      // Update Firestore leaderboard. arrayUnion de-dupes so re-solving the
+      // same question doesn't inflate the count. We also increment a running
+      // points total so the leaderboard can rank by points, not just count.
+      // Best-effort: a failure here shouldn't block the success modal — the
+      // submission is already in Mongo.
+      try {
+        const earnedPoints =
+          typeof data.points === "number" ? data.points : 0;
+        await setDoc(
+          doc(db, "leaderboard", userData.email),
+          {
+            name: userData.name,
+            email: userData.email,
+            solvedQuestionIds: arrayUnion(questionId),
+            points: increment(earnedPoints),
+            updatedAt: serverTimestamp(),
+          },
+          { merge: true }
+        );
+      } catch (lbErr) {
+        // Surface this loudly to the user during debugging — silent failures
+        // here led to a "leaderboard not updating" mystery before.
+        console.error("❌ Leaderboard Firestore write failed:", lbErr);
+        const msg =
+          lbErr instanceof Error ? lbErr.message : String(lbErr);
+        alert(
+          "Submitted to DB ✓ but leaderboard write failed:\n\n" +
+            msg +
+            "\n\nCheck browser console for the full error."
+        );
+      }
+
       // SHOW MODAL INSTEAD OF ALERT!
       setShowSuccessModal(true); // <-- MODAL
     } catch (error) {

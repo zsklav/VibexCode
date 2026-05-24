@@ -15,9 +15,10 @@ interface HistoryItem {
 }
 
 interface Submission {
+  questionId: string;
   questionTitle?: string;
   submittedAt: string;
-  // add more fields here if needed
+  passed?: boolean;
 }
 
 export default function Page() {
@@ -50,13 +51,21 @@ export default function Page() {
 
         const data = await res.json();
 
-        // Map submissions to HistoryItem[]
-        const historyArray: HistoryItem[] = (data.submissions || []).map(
-          (sub: Submission) => ({
+        // Dedupe by questionId so each problem appears once (LeetCode-style).
+        // /api/user-submissions returns sorted by submittedAt desc, so the
+        // first occurrence of each questionId is already the latest attempt.
+        const submissions = (data.submissions || []) as Submission[];
+        const seen = new Set<string>();
+        const historyArray: HistoryItem[] = [];
+        for (const sub of submissions) {
+          const key = sub.questionId || sub.questionTitle || "";
+          if (seen.has(key)) continue;
+          seen.add(key);
+          historyArray.push({
             title: sub.questionTitle || "Untitled",
             time: new Date(sub.submittedAt).toLocaleString(),
-          })
-        );
+          });
+        }
 
         setHistoryData(historyArray);
       } catch (error) {

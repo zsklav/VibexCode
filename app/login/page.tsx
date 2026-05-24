@@ -5,7 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import Navbar from "../components/Navbar";
 import { useForm } from "react-hook-form";
-import authservice from "../appwrite/auth";
+import authservice from "@/app/auth/firebase-auth";
 import { useDispatch } from "react-redux";
 import { useRouter } from "next/navigation";
 import { AppDispatch } from "../store/store";

@@ -3,7 +3,7 @@
 import { Suspense, useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
-import authservice from "../appwrite/auth";
+import authservice from "@/app/auth/firebase-auth";
 import Navbar from "../components/Navbar";
 import { Eye, EyeOff } from "lucide-react";
 

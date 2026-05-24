@@ -9,10 +9,20 @@ import Logo from "./Logo";
 import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch, RootState } from "../store/store";
 import { login, logout as logoutAction } from "../store/authSlice";
-import authservice from "../appwrite/auth";
+import authservice from "@/app/auth/firebase-auth";
 import { getAuth, signOut } from "firebase/auth";
 import { app } from "@/lib/firebase";
 import { CgProfile } from "react-icons/cg";
+import { isAdminEmail } from "@/lib/auth";
+
+// Single source of truth for navbar labels → URLs.
+// Routes keep their existing casing to avoid breaking external links/bookmarks.
+const NAV_ROUTES: Record<string, string> = {
+  Problems: "/problems",
+  Explore: "/Explore",
+  Dashboard: "/Dashboard",
+  Community: "/community",
+};
 
 const menuItemVariants = {
   hidden: { opacity: 0, x: -10 },
@@ -26,9 +36,6 @@ const menuItemVariants = {
 const Navbar = () => {
   const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
-  const [showNotif, setShowNotif] = useState(false);
-  const [hasUnread, setHasUnread] = useState(false);
-  const notifRef = useRef<HTMLDivElement | null>(null);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const profileRef = useRef<HTMLDivElement | null>(null);
   const dispatch = useDispatch<AppDispatch>();
@@ -55,21 +62,6 @@ const Navbar = () => {
       checkUser();
     }
   }, [dispatch, isLoggedIn]);
-
-  useEffect(() => {
-    const stored = localStorage.getItem("poll-viewed");
-    setHasUnread(stored !== "true");
-  }, []);
-
-  useEffect(() => {
-    const handleRouteChange = () => {
-      if (window.location.pathname === "/comm") {
-        localStorage.setItem("poll-viewed", "true");
-        setHasUnread(false);
-      }
-    };
-    handleRouteChange();
-  }, []);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -153,17 +145,7 @@ const Navbar = () => {
               whileTap={{ scale: 0.95 }}
             >
               <Link
-                href={`/${
-                  item === "Problems"
-                    ? "problems"
-                    : item === "Dashboard"
-                    ? "Dashboard"
-                    : item === "Explore"
-                    ? "Explore"
-                    : item === "Community" // Updated this condition
-                    ? "Forums"
-                    : item.toLowerCase()
-                }`}
+                href={NAV_ROUTES[item]}
                 className="text-gray-800 dark:text-white font-medium hover:text-purple-600 dark:hover:text-purple-400 transition-all cursor-pointer2"
               >
                 {item}
@@ -179,61 +161,6 @@ const Navbar = () => {
 
           {isLoggedIn ? (
             <>
-              {/* Notification */}
-              <div className="relative" ref={notifRef}>
-                <motion.button
-                  whileHover={{ scale: 1.1 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={() => {
-                    setShowNotif(!showNotif);
-                    localStorage.setItem("poll-viewed", "true");
-                    setHasUnread(false);
-                  }}
-                  className="relative p-2 text-gray-800 dark:text-white"
-                  aria-label="Notification"
-                >
-                  {hasUnread && (
-                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full px-1.5">
-                      1
-                    </span>
-                  )}
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="h-6 w-6"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                    strokeWidth={2}
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V4a2 2 0 10-4 0v1.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
-                    />
-                  </svg>
-                </motion.button>
-                <AnimatePresence>
-                  {showNotif && (
-                    <motion.div
-                      initial={{ opacity: 0, y: -10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -10 }}
-                      className="absolute right-0 mt-2 w-64 bg-white dark:bg-zinc-800 shadow-xl rounded-lg p-4 text-sm z-50"
-                    >
-                      <p className="text-gray-800 dark:text-gray-200">
-                        📢 New Poll: &quot;Topic for first test&quot;
-                      </p>
-                      <button
-                        className="mt-2 text-blue-600 hover:underline dark:text-blue-400"
-                        onClick={() => router.push("/comm")}
-                      >
-                        View Poll
-                      </button>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
-
               {/* Profile Button and Popup */}
               <div className="relative" ref={profileRef}>
                 <button
@@ -264,6 +191,35 @@ const Navbar = () => {
                       >
                         Profile
                       </button>
+                      <button
+                        onClick={() => {
+                          setShowProfileMenu(false);
+                          router.push("/submissions");
+                        }}
+                        className="py-2 px-3 hover:bg-zinc-100 dark:hover:bg-zinc-800 dark:text-white rounded text-left transition"
+                      >
+                        Submissions
+                      </button>
+                      <button
+                        onClick={() => {
+                          setShowProfileMenu(false);
+                          router.push("/settings");
+                        }}
+                        className="py-2 px-3 hover:bg-zinc-100 dark:hover:bg-zinc-800 dark:text-white rounded text-left transition"
+                      >
+                        Settings
+                      </button>
+                      {isAdminEmail(authState.userData?.email) && (
+                        <button
+                          onClick={() => {
+                            setShowProfileMenu(false);
+                            router.push("/admin");
+                          }}
+                          className="py-2 px-3 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded text-left text-purple-600 dark:text-purple-300 font-medium transition"
+                        >
+                          🛡️ Admin
+                        </button>
+                      )}
                       <button
                         onClick={handleLogout}
                         className="py-2 px-3 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded text-left text-red-500 transition"
@@ -328,19 +284,7 @@ const Navbar = () => {
                 exit="hidden"
               >
                 <button
-                  onClick={() =>
-                    handleMobileNavClick(
-                      item === "Problems"
-                        ? "/problems"
-                        : item === "Dashboard"
-                        ? "/Dashboard"
-                        : item === "Explore"
-                        ? "/Explore"
-                        : item === "Community" // Updated here as well
-                        ? "/Forums"
-                        : `/${item.toLowerCase()}`
-                    )
-                  }
+                  onClick={() => handleMobileNavClick(NAV_ROUTES[item])}
                   className="text-left w-full text-gray-800 dark:text-white text-base font-medium hover:text-purple-600 dark:hover:text-purple-400 transition-all"
                 >
                   {item}

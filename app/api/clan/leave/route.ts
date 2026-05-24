@@ -1,36 +1,57 @@
 import { NextRequest, NextResponse } from "next/server";
-// Using the client-side import as requested.
-import { databases } from "@/lib/appwrite";
+import connectDB from "@/lib/mongodb";
+import Clans from "@/models/Clans";
+import ClanMembers from "@/models/ClanMembers";
 
-const DATABASE_ID = process.env.NEXT_PUBLIC_DATABASE_ID as string;
-const PROFILES_COLLECTION_ID = process.env
-  .NEXT_PUBLIC_PROFILES_COLLECTION_ID as string;
+export const runtime = "nodejs";
 
-// POST to leave a clan
 export async function POST(request: NextRequest) {
   try {
-    const { userId } = await request.json();
+    const { userEmail } = await request.json();
 
-    if (!userId) {
+    if (!userEmail) {
       return NextResponse.json(
-        { message: "User ID is required" },
+        { message: "userEmail is required" },
         { status: 400 }
       );
     }
 
-    // ⚠️ This may fail with 401 Unauthorized unless Appwrite is authenticated
-    await databases.updateDocument(
-      DATABASE_ID,
-      PROFILES_COLLECTION_ID,
-      userId,
-      { clanId: null }
-    );
+    await connectDB();
+    const email = userEmail.toLowerCase();
+
+    const membership = await ClanMembers.findOne({ email });
+    if (!membership) {
+      return NextResponse.json(
+        { message: "User is not in a clan" },
+        { status: 404 }
+      );
+    }
+
+    const clanId = membership.clanId;
+    await ClanMembers.deleteOne({ _id: membership._id });
+
+    // Handle ownership transfer or empty-clan cleanup when the owner leaves.
+    const clan = await Clans.findById(clanId);
+    if (clan && clan.ownerEmail === email) {
+      const remaining = await ClanMembers.countDocuments({ clanId });
+      if (remaining === 0) {
+        await Clans.deleteOne({ _id: clanId });
+      } else {
+        // Promote the oldest remaining member to owner.
+        const next = await ClanMembers.findOne({ clanId }).sort({
+          createdAt: 1,
+        });
+        if (next) {
+          clan.ownerEmail = next.email;
+          await clan.save();
+        }
+      }
+    }
 
     return NextResponse.json({ message: "Successfully left clan" });
-  } catch (error: unknown) {
+  } catch (error) {
     const errMessage =
-      error instanceof Error ? error.message : "Unknown error occurred";
-
+      error instanceof Error ? error.message : "Unknown error";
     return NextResponse.json(
       { message: "Failed to leave clan", error: errMessage },
       { status: 500 }

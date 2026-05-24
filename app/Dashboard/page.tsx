@@ -8,20 +8,15 @@ import Navbar from "../components/Navbar";
 import PersonalTODO from "../components/PersonalTODO";
 import CommunityConnect from "../components/CommunityConnect";
 
-import { account } from "@/lib/appwrite";
+import authservice from "@/app/auth/firebase-auth";
 
 const Dashboard = () => {
   useEffect(() => {
-    const fetchUser = async () => {
-      try {
-        await account.get(); // ✅ No JWT needed, session maintained
-      } catch (error) {
-        console.error("Not authenticated", error);
-        // Optionally redirect to login page here
-      }
-    };
-
-    fetchUser();
+    // AuthGuard already handles route-level auth; this is just a no-op
+    // sanity check kept from the original component, ported off Appwrite.
+    authservice.checkUser().catch((error) => {
+      console.error("Not authenticated", error);
+    });
   }, []);
 
   return (

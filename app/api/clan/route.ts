@@ -1,63 +1,67 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getAppwriteDatabases } from "@/lib/appwrite"; // server-side client
+import connectDB from "@/lib/mongodb";
+import Clans from "@/models/Clans";
+import ClanMembers from "@/models/ClanMembers";
 
-const DATABASE_ID = process.env.NEXT_PUBLIC_DATABASE_ID as string;
-const CLANS_COLLECTION_ID = process.env
-  .NEXT_PUBLIC_CLANS_COLLECTION_ID as string;
-const PROFILES_COLLECTION_ID = process.env
-  .NEXT_PUBLIC_PROFILES_COLLECTION_ID as string;
+export const runtime = "nodejs";
 
-// GET the current user's clan
+// GET the current user's clan, by email.
+// Replaces the previous Appwrite-backed implementation.
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
-    const userId = searchParams.get("userId");
+    const userEmail = searchParams.get("userEmail");
 
-    if (!userId) {
+    if (!userEmail) {
       return NextResponse.json(
-        { message: "User ID is required" },
+        { message: "userEmail is required" },
         { status: 400 }
       );
     }
 
-    const databases = getAppwriteDatabases();
+    await connectDB();
 
-    const profile = await databases.getDocument(
-      DATABASE_ID,
-      PROFILES_COLLECTION_ID,
-      userId
-    );
-
-    if (!profile.clanId) {
+    const email = userEmail.toLowerCase();
+    const membership = await ClanMembers.findOne({ email }).lean<{
+      _id: unknown;
+      clanId: unknown;
+    } | null>();
+    if (!membership) {
       return NextResponse.json(
         { message: "User not in a clan" },
         { status: 404 }
       );
     }
 
-    const clanData = await databases.getDocument(
-      DATABASE_ID,
-      CLANS_COLLECTION_ID,
-      profile.clanId as string
-    );
-
-    return NextResponse.json(clanData);
-  } catch (error: unknown) {
-    if (
-      error &&
-      typeof error === "object" &&
-      "code" in error &&
-      (error as any).code === 404
-    ) {
+    const clan = await Clans.findById(membership.clanId).lean<{
+      _id: { toString: () => string };
+      name: string;
+      tag: string;
+      ownerEmail: string;
+    } | null>();
+    if (!clan) {
+      // Stale pointer to a deleted clan — clean up.
+      await ClanMembers.deleteOne({ _id: membership._id });
       return NextResponse.json(
         { message: "User not in a clan" },
         { status: 404 }
       );
     }
 
+    const memberCount = await ClanMembers.countDocuments({
+      clanId: clan._id,
+    });
+
+    return NextResponse.json({
+      $id: clan._id.toString(),
+      name: clan.name,
+      tag: clan.tag,
+      memberCount,
+      ownerEmail: clan.ownerEmail,
+    });
+  } catch (error) {
     const errMessage =
       error instanceof Error ? error.message : "Unknown server error";
-
     return NextResponse.json(
       { message: "Server error", error: errMessage },
       { status: 500 }

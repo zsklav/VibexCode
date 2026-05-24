@@ -168,6 +168,7 @@ const APIDebugger = () => {
         <button
           onClick={() =>
             testEndpoint("/api/user/mark-solved", "POST", {
+              userEmail: "test@example.com",
               questionId: "test123",
             })
           }
