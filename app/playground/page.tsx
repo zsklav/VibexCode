@@ -14,8 +14,6 @@ import {
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import Navbar from "../components/Navbar";
-import SoundBoard from "../components/SoundBoard";
-import Lead from "../components/Lead";
 import { useSelector } from "react-redux";
 import type { RootState } from "../store/store";
 import SuccessModal from "../components/SuccessModal";
@@ -334,92 +332,100 @@ function PlaygroundContent() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col dark:bg-[#020612] text-gray-900 dark:text-white">
+    <div className="h-screen flex flex-col dark:bg-[#020612] text-gray-900 dark:text-white">
       <Navbar />
-      <div className="flex flex-1 p-3 gap-4 overflow-hidden flex-col md:flex-row">
-        {/* Left Panel */}
-        <div className="w-full md:w-1/4 flex flex-col gap-4 overflow-auto">
-          {/* Question Section */}
-          <section className="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow dark:shadow-lg h-[200px] md:h-[30%] flex flex-col">
-            <h2 className="text-xl font-semibold mb-2">🧠 Question</h2>
+      <div className="flex flex-1 p-3 gap-3 overflow-hidden flex-col lg:flex-row min-h-0">
+        {/* Left — Question + Testcases + Notes (stacked, scrollable) */}
+        <div className="w-full lg:w-2/5 flex flex-col gap-3 overflow-hidden min-h-0">
+          <section className="bg-white dark:bg-zinc-800 rounded-2xl p-5 shadow-[0_4px_20px_rgba(128,0,255,0.08)] flex flex-col min-h-0 flex-[2]">
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-lg font-semibold">🧠 Question</h2>
+              {question?.difficulty && (
+                <span
+                  className={`text-[10px] px-2 py-0.5 rounded uppercase font-medium ${
+                    question.difficulty === "easy"
+                      ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300"
+                      : question.difficulty === "medium"
+                      ? "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300"
+                      : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300"
+                  }`}
+                >
+                  {question.difficulty}
+                </span>
+              )}
+            </div>
             {loading ? (
               <p className="text-sm text-gray-500">Loading...</p>
             ) : error ? (
               <p className="text-sm text-red-500">Error: {error}</p>
             ) : question ? (
               <>
-                <h3 className="font-bold mb-2">{question.title}</h3>
-                <div className="text-sm overflow-auto flex-1 prose dark:prose-invert">
+                <h3 className="font-bold text-base mb-2">{question.title}</h3>
+                <div className="text-sm overflow-auto flex-1 prose dark:prose-invert max-w-none">
                   <ReactMarkdown>{question.description}</ReactMarkdown>
                 </div>
               </>
             ) : !questionId ? (
-              <>
-                <h3 className="font-semibold mb-1">Free Coding Playground</h3>
-                <p className="text-sm text-gray-500 dark:text-gray-400">
-                  You&apos;re in standalone mode. Pick a question from{" "}
+              <div className="text-sm text-gray-500 dark:text-gray-400">
+                <h3 className="font-semibold mb-1 text-gray-700 dark:text-gray-200">
+                  Free Coding Playground
+                </h3>
+                <p>
+                  Pick a problem from{" "}
                   <a
                     href="/problems"
                     className="text-blue-500 hover:underline"
                   >
                     Problems
                   </a>{" "}
-                  to attempt one, or just experiment with the editor on the
-                  right.
+                  to attempt one, or just experiment with the editor.
                 </p>
-              </>
+              </div>
             ) : (
               <p className="text-sm text-gray-500">No question found</p>
             )}
           </section>
 
-          {/* Testcases Section */}
-          <section className="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow dark:shadow-lg h-[200px] md:h-[30%] flex flex-col">
-            <h2 className="text-lg font-semibold mb-2">🧪 Testcases</h2>
+          <section className="bg-white dark:bg-zinc-800 rounded-2xl p-5 shadow-[0_4px_20px_rgba(128,0,255,0.08)] flex flex-col min-h-0 flex-1">
+            <h2 className="text-sm font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2">
+              🧪 Testcases
+            </h2>
             {loading ? (
               <p className="text-sm text-gray-500">Loading...</p>
             ) : question?.testcases ? (
-              <pre className="text-sm whitespace-pre-wrap overflow-auto flex-1">
+              <pre className="text-sm whitespace-pre-wrap overflow-auto flex-1 font-mono bg-gray-50 dark:bg-zinc-900 rounded p-2">
                 {question.testcases}
               </pre>
             ) : !questionId ? (
               <p className="text-sm text-gray-500">
-                No challenge selected — testcases will appear here.
+                No challenge selected.
               </p>
             ) : (
-              <p className="text-sm text-gray-500">No testcases available</p>
+              <p className="text-sm text-gray-500">No testcases available.</p>
             )}
           </section>
 
-          {/* Answer Markdown Section */}
-          <section className="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow dark:shadow-lg h-[300px] md:h-[600px] flex flex-col">
-            <h2 className="text-lg font-semibold mb-2">
-              📝 Your Answer (Markdown)
+          <section className="bg-white dark:bg-zinc-800 rounded-2xl p-5 shadow-[0_4px_20px_rgba(128,0,255,0.08)] flex flex-col min-h-0 flex-1">
+            <h2 className="text-sm font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2">
+              📝 Notes
             </h2>
             <textarea
               value={answerInput}
               onChange={(e) => setAnswerInput(e.target.value)}
-              placeholder="Write your solution in Markdown here..."
-              className="flex-1 resize-none p-3 border border-gray-300 dark:border-gray-700 rounded-md bg-gray-50 dark:bg-[#2a2a2f] text-sm text-gray-900 dark:text-gray-100 outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="Quick notes on your approach (required for submit)..."
+              className="flex-1 min-h-[60px] resize-none p-2 border border-gray-200 dark:border-zinc-700 rounded bg-gray-50 dark:bg-zinc-900 text-sm outline-none focus:ring-2 focus:ring-purple-500/30"
             />
-            <h3 className="mt-4 mb-2 font-semibold text-sm">Live Preview</h3>
-            <div className="flex-1 overflow-auto prose dark:prose-invert border border-gray-200 dark:border-gray-700 rounded p-3 bg-white dark:bg-gray-900 text-sm">
-              <ReactMarkdown>
-                {answerInput || "_Nothing to preview_"}
-              </ReactMarkdown>
-            </div>
           </section>
         </div>
 
-        {/* Center Panel */}
-        <div className="w-full md:w-2/4 flex flex-col gap-4 overflow-hidden">
-          {/* Compiler Section */}
-          <section className="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow dark:shadow-lg h-[200px] md:h-[600px] overflow-hidden flex flex-col gap-y-2">
-            <div className="flex justify-between items-center mb-2">
+        {/* Right — Compiler (top) + Result (bottom) */}
+        <div className="w-full lg:w-3/5 flex flex-col gap-3 overflow-hidden min-h-0">
+          <section className="bg-white dark:bg-zinc-800 rounded-2xl p-5 shadow-[0_4px_20px_rgba(128,0,255,0.08)] flex flex-col min-h-0 flex-[2]">
+            <div className="flex justify-between items-center mb-3">
               <h2 className="text-lg font-semibold">💻 Compiler</h2>
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
                 <select
-                  className="dark:bg-gray-800 px-2 py-1 rounded"
+                  className="text-sm bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 px-2 py-1 rounded"
                   value={language}
                   onChange={(e) =>
                     handleLanguageChange(e.target.value as Language)
@@ -434,7 +440,7 @@ function PlaygroundContent() {
                 </select>
                 <button
                   onClick={handleResetCode}
-                  className="px-3 py-1 text-sm bg-gray-200 dark:bg-gray-600 hover:bg-gray-300 dark:hover:bg-gray-500 rounded-md"
+                  className="px-3 py-1 text-sm bg-gray-100 dark:bg-zinc-700 hover:bg-gray-200 dark:hover:bg-zinc-600 rounded"
                   disabled={isRunning}
                 >
                   Reset
@@ -442,7 +448,7 @@ function PlaygroundContent() {
               </div>
             </div>
 
-            <div className="flex-1">
+            <div className="flex-1 min-h-0 rounded overflow-hidden border border-gray-200 dark:border-zinc-700">
               <MonacoEditor
                 height="100%"
                 language={languageMap[language].monacoLang}
@@ -458,110 +464,97 @@ function PlaygroundContent() {
               />
             </div>
 
-            <div className="mt-2">
+            <div className="mt-3 flex items-center justify-end gap-2">
+              {isCorrect === true && (
+                <button
+                  onClick={handleSubmit}
+                  disabled={isSubmitting}
+                  className="px-4 py-2 rounded-lg text-sm font-medium text-white bg-gradient-to-r from-green-500 to-emerald-600 hover:opacity-90 disabled:opacity-50"
+                >
+                  {isSubmitting ? "Submitting..." : "Submit Answer"}
+                </button>
+              )}
               <button
-                className={`bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 disabled:bg-gray-500`}
+                className="px-4 py-2 rounded-lg text-sm font-medium bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-50"
                 onClick={handleRun}
                 disabled={isRunning}
               >
-                {isRunning ? "⏳ Running..." : "Run Code"}
+                {isRunning ? "Running…" : "Run Code"}
               </button>
             </div>
           </section>
 
-          {/* Result Section */}
-          <section className="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow dark:shadow-lg max-h-60 overflow-auto flex flex-col gap-y-2">
-            <div className="flex justify-between items-center">
-              <h2 className="text-lg font-semibold">📄 Result</h2>
+          <section className="bg-white dark:bg-zinc-800 rounded-2xl p-5 shadow-[0_4px_20px_rgba(128,0,255,0.08)] flex flex-col min-h-0 flex-1 overflow-hidden">
+            <div className="flex justify-between items-center mb-2">
+              <h2 className="text-sm font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                📄 Result
+              </h2>
               {output && (
                 <button
                   onClick={handleClearOutput}
-                  className="px-3 py-1 text-sm bg-gray-200 dark:bg-gray-600 hover:bg-gray-300 dark:hover:bg-gray-500 rounded-md"
+                  className="text-xs px-2 py-0.5 bg-gray-100 dark:bg-zinc-700 hover:bg-gray-200 dark:hover:bg-zinc-600 rounded"
                 >
                   Clear
                 </button>
               )}
             </div>
-            <pre className="text-sm whitespace-pre-wrap">
-              {output || "Output will appear here after running your code..."}
-            </pre>
 
-            {isCorrect === true && (
-              <>
-                <p className="text-green-600 font-semibold">
-                  🎉 Correct Output! You can submit your answer.
+            <div className="flex-1 overflow-auto min-h-0 space-y-2">
+              <pre className="text-sm whitespace-pre-wrap font-mono bg-gray-50 dark:bg-zinc-900 rounded p-3 min-h-[40px]">
+                {output || (
+                  <span className="text-gray-400">
+                    Output will appear here after running your code.
+                  </span>
+                )}
+              </pre>
+
+              {isCorrect === true && (
+                <p className="text-green-600 dark:text-green-400 text-sm font-medium">
+                  🎉 Correct! Hit Submit Answer above.
                 </p>
-                <button
-                  onClick={handleSubmit}
-                  disabled={isSubmitting}
-                  className={`mt-2 px-4 py-2 rounded text-white ${
-                    isSubmitting
-                      ? "bg-gray-500 cursor-not-allowed"
-                      : "bg-green-600 hover:bg-green-700"
-                  }`}
-                >
-                  {isSubmitting ? "Submitting..." : "Submit Answer"}
-                </button>
-              </>
-            )}
+              )}
 
-            {isCorrect === false && diffLines.length > 0 && (
-              <>
-                <p className="text-red-500 font-semibold mb-1">
-                  🚫 Output does not match expected answer. See Diff below:
+              {isCorrect === false && diffLines.length > 0 && (
+                <>
+                  <p className="text-red-500 text-sm font-medium">
+                    🚫 Output doesn&apos;t match expected — diff below:
+                  </p>
+                  <div className="rounded border border-gray-200 dark:border-zinc-700 p-2 overflow-x-auto text-xs font-mono bg-gray-50 dark:bg-zinc-900">
+                    {diffLines.map((line, idx) =>
+                      line.type === "same" ? (
+                        <div key={idx} className="text-gray-500">
+                          &nbsp; {line.value}
+                        </div>
+                      ) : line.type === "remove" ? (
+                        <div
+                          key={idx}
+                          className="bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300"
+                        >
+                          - {line.value}
+                        </div>
+                      ) : (
+                        <div
+                          key={idx}
+                          className="bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300"
+                        >
+                          + {line.value}
+                        </div>
+                      )
+                    )}
+                  </div>
+                </>
+              )}
+
+              {isCorrect === false && !diffLines.length && (
+                <p className="text-red-500 text-sm font-medium">
+                  🚫 Output doesn&apos;t match expected answer.
                 </p>
-                <div
-                  style={{
-                    background:
-                      "repeating-linear-gradient(90deg,#222 0 5%,#202026 5% 10%)",
-                  }}
-                  className="rounded border border-gray-300 dark:border-gray-700 p-2 overflow-x-auto text-xs font-mono"
-                >
-                  {diffLines.map((line, idx) =>
-                    line.type === "same" ? (
-                      <div key={idx} style={{ color: "#999" }}>
-                        &nbsp; {line.value}
-                      </div>
-                    ) : line.type === "remove" ? (
-                      <div
-                        key={idx}
-                        style={{ background: "#ffeaea", color: "#d44" }}
-                      >
-                        - {line.value}
-                      </div>
-                    ) : (
-                      <div
-                        key={idx}
-                        style={{ background: "#eaffea", color: "#287c34" }}
-                      >
-                        + {line.value}
-                      </div>
-                    )
-                  )}
-                </div>
-              </>
-            )}
-
-            {isCorrect === false && !diffLines.length && (
-              <p className="text-red-500 font-semibold">
-                🚫 Output does not match expected answer.
-              </p>
-            )}
-          </section>
-        </div>
-
-        {/* Right Panel */}
-        <div className="w-full md:w-1/4 flex flex-col gap-4 overflow-auto">
-          <section className="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow dark:shadow-lg h-[200px] md:h-[45%]">
-            <SoundBoard />
-          </section>
-
-          <section className="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow dark:shadow-lg flex-1 overflow-auto">
-            <Lead />
+              )}
+            </div>
           </section>
         </div>
       </div>
-      {/* ---- MODAL BELOW ---- */}
+
       {showSuccessModal && (
         <SuccessModal onClose={() => setShowSuccessModal(false)} />
       )}

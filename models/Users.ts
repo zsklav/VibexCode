@@ -38,13 +38,18 @@ const UserSchema = new mongoose.Schema(
     password: { type: String },
     name: { type: String, default: "" },
 
-    // Status & activity
+    // Status & activity. `status` is legacy (manual admin override, kept
+    // for backwards-compat). Presence is now derived from `lastSeen` —
+    // see lib/presence.ts / /api/user/heartbeat.
     status: {
       type: String,
       enum: ["Online", "Idle", "Busy", "Offline"],
       default: "Offline",
     },
     activity: { type: String, default: "" },
+    // Updated every ~30s by the client heartbeat while the page is visible.
+    // Used to derive Online (<2 min) / Idle (<10 min) / Offline.
+    lastSeen: { type: Date, default: Date.now, index: true },
 
     // Legacy: Appwrite user ID (kept for any pre-migration users).
     // Sparse index allows multiple null values while preserving uniqueness.

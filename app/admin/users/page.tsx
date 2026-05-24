@@ -13,17 +13,28 @@ type User = {
   email: string;
   name?: string;
   username?: string;
-  status?: "Online" | "Idle" | "Busy" | "Offline";
+  status?: "Online" | "Idle" | "Offline";
+  lastSeen?: string;
 };
-
-const STATUS_OPTIONS: User["status"][] = ["Online", "Idle", "Busy", "Offline"];
 
 const statusClass: Record<NonNullable<User["status"]>, string> = {
   Online: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300",
   Idle: "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300",
-  Busy: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300",
   Offline: "bg-gray-200 text-gray-700 dark:bg-zinc-700 dark:text-gray-300",
 };
+
+function timeAgo(date?: string): string {
+  if (!date) return "—";
+  const diff = Date.now() - new Date(date).getTime();
+  if (Number.isNaN(diff) || diff < 0) return "—";
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return "just now";
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h ago`;
+  const days = Math.floor(hrs / 24);
+  return `${days}d ago`;
+}
 
 export default function AdminUsersPage() {
   const { userData } = useSelector((state: RootState) => state.auth);
@@ -33,7 +44,6 @@ export default function AdminUsersPage() {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [updating, setUpdating] = useState<string | null>(null);
 
   const fetchUsers = async () => {
     try {
@@ -45,25 +55,6 @@ export default function AdminUsersPage() {
       setError(e instanceof Error ? e.message : "Failed to load users");
     } finally {
       setLoading(false);
-    }
-  };
-
-  const updateStatus = async (userId: string, newStatus: User["status"]) => {
-    setUpdating(userId);
-    try {
-      const res = await fetch(`/api/dev/users/${userId}/status`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: newStatus }),
-      });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      setUsers((prev) =>
-        prev.map((u) => (u._id === userId ? { ...u, status: newStatus } : u))
-      );
-    } catch (e) {
-      alert(e instanceof Error ? e.message : "Update failed");
-    } finally {
-      setUpdating(null);
     }
   };
 
@@ -97,7 +88,8 @@ export default function AdminUsersPage() {
 
         <h1 className="text-3xl font-bold mb-1">Users</h1>
         <p className="text-gray-500 dark:text-gray-400 text-sm mb-6">
-          {users.length} registered
+          {users.length} registered · status derived from each user&apos;s
+          last heartbeat
         </p>
 
         {loading ? (
@@ -133,7 +125,7 @@ export default function AdminUsersPage() {
                     {user.email}
                   </p>
                 </div>
-                <div className="flex items-center gap-2 shrink-0">
+                <div className="flex items-center gap-3 shrink-0">
                   <span
                     className={`text-xs px-2 py-1 rounded-full ${
                       statusClass[user.status || "Offline"]
@@ -141,20 +133,12 @@ export default function AdminUsersPage() {
                   >
                     {user.status || "Offline"}
                   </span>
-                  <select
-                    value={user.status || "Offline"}
-                    onChange={(e) =>
-                      updateStatus(user._id, e.target.value as User["status"])
-                    }
-                    disabled={updating === user._id}
-                    className="text-xs px-2 py-1 border border-gray-300 dark:border-zinc-600 rounded bg-white dark:bg-zinc-700 disabled:opacity-50"
+                  <span
+                    className="text-xs text-gray-400 dark:text-gray-500 w-20 text-right"
+                    title="Last heartbeat received"
                   >
-                    {STATUS_OPTIONS.map((s) => (
-                      <option key={s} value={s}>
-                        {s}
-                      </option>
-                    ))}
-                  </select>
+                    {timeAgo(user.lastSeen)}
+                  </span>
                 </div>
               </div>
             ))}

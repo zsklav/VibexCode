@@ -11,64 +11,54 @@ import { motion } from "framer-motion";
 import { useSelector } from "react-redux";
 import { RootState } from "./store/store";
 
-// Helper for random between min and max
-const rand = (min: number, max: number) =>
-  Math.floor(Math.random() * (max - min + 1)) + min;
+// Static ring props — values are derived from index, no Math.random() so
+// server and client render identical HTML (was causing a hydration flash).
+const MOBILE_RING_POSITIONS = [
+  { top: 30, left: 40 },
+  { bottom: 30, right: 30 },
+  { top: 50, right: 20 },
+  { bottom: 60, left: 30 },
+  { bottom: 60, right: 30 },
+];
 
-// Generate random properties for 5 rings on mobile
-const genMobileRingProps = () =>
-  Array(5)
-    .fill(0)
-    .map(() => {
-      const positions = [
-        { style: { top: rand(10, 60), left: rand(10, 70) } },
-        { style: { bottom: rand(10, 60), right: rand(10, 70) } },
-        { style: { top: rand(10, 70), right: rand(10, 60) } },
-        { style: { bottom: rand(10, 70), left: rand(10, 60) } },
-        { style: { bottom: rand(30, 80), right: rand(10, 50) } },
-      ];
-      const pos = positions[rand(0, positions.length - 1)].style;
-      const animTime = rand(2800, 4200);
-      const animX = rand(8, 32) * (Math.random() > 0.5 ? 1 : -1);
-      const animY = rand(8, 32) * (Math.random() > 0.5 ? 1 : -1);
-      return {
-        style: {
-          position: "absolute",
-          ...pos,
-          opacity: Math.random() > 0.5 ? 0.4 : 0.3,
-          animation: `floatRingMobile ${animTime}ms ease-in-out infinite alternate`,
-          "--ring-anim-x": `${animX}px`,
-          "--ring-anim-y": `${animY}px`,
-        } as unknown as React.CSSProperties,
-      };
-    });
+const DESKTOP_RING_POSITIONS = [
+  { top: 96, left: 80 },
+  { bottom: 16, right: 40 },
+  { top: 40, right: 64 },
+  { bottom: 64, left: 40 },
+  { bottom: 112, right: 112 },
+];
 
-// Generate random properties for desktop rings (fixed positions + animation)
-const genDesktopRingProps = () => {
-  const positions = [
-    { top: 96, left: 80 }, // top-24 left-20 (24*4=96, 20*4=80 px)
-    { bottom: 16, right: 40 }, // bottom-4 right-10
-    { top: 40, right: 64 }, // top-10 right-16
-    { bottom: 64, left: 40 }, // bottom-16 left-10
-    { bottom: 112, right: 112 }, // bottom-28 right-28
-  ];
-
-  return positions.map((pos) => {
-    const animTime = rand(2800, 4200);
-    const animX = rand(8, 32) * (Math.random() > 0.5 ? 1 : -1);
-    const animY = rand(8, 32) * (Math.random() > 0.5 ? 1 : -1);
-    return {
-      style: {
-        position: "absolute",
-        ...pos,
-        opacity: 0.4,
-        animation: `floatRingDesktop ${animTime}ms ease-in-out infinite alternate`,
-        "--ring-anim-x": `${animX}px`,
-        "--ring-anim-y": `${animY}px`,
-      } as unknown as React.CSSProperties,
-    };
-  });
+type RingPos = {
+  top?: number;
+  left?: number;
+  bottom?: number;
+  right?: number;
 };
+
+const ringStyle = (
+  pos: RingPos,
+  i: number,
+  keyframe: string
+): React.CSSProperties =>
+  ({
+    position: "absolute",
+    ...pos,
+    opacity: i % 2 === 0 ? 0.4 : 0.3,
+    // Stagger animation timings so they don't move in lockstep, but
+    // deterministically — same value every render.
+    animation: `${keyframe} ${3000 + i * 250}ms ease-in-out infinite alternate`,
+    "--ring-anim-x": `${(i % 2 === 0 ? 1 : -1) * (10 + i * 4)}px`,
+    "--ring-anim-y": `${(i % 3 === 0 ? 1 : -1) * (12 + i * 3)}px`,
+  } as unknown as React.CSSProperties);
+
+const mobileRingProps = MOBILE_RING_POSITIONS.map((pos, i) => ({
+  style: ringStyle(pos, i, "floatRingMobile"),
+}));
+
+const desktopRingProps = DESKTOP_RING_POSITIONS.map((pos, i) => ({
+  style: ringStyle(pos, i, "floatRingDesktop"),
+}));
 
 // Define the CSS animation keyframes
 const mobileRingsCSS = `
@@ -93,14 +83,6 @@ export default function Home() {
   const [loggedIn, setLoggedIn] = useState(false);
   const value = useSelector((state: RootState) => state.auth.status);
 
-  // For random ring positions on each mount
-  const [mobileRingProps, setMobileRingProps] = useState(() =>
-    genMobileRingProps()
-  );
-  const [desktopRingProps, setDesktopRingProps] = useState(() =>
-    genDesktopRingProps()
-  );
-
   useEffect(() => {
     AOS.init({
       duration: 1000,
@@ -117,12 +99,6 @@ export default function Home() {
     };
     checkUser();
   }, [value]);
-
-  // On remounts, update rings
-  useEffect(() => {
-    setMobileRingProps(genMobileRingProps());
-    setDesktopRingProps(genDesktopRingProps());
-  }, []);
 
   return (
     <>
@@ -190,7 +166,7 @@ export default function Home() {
                   skills, expand your knowledge and prepare for technical
                   interviews.
                 </p>
-                <Link href="playground?id=6884bb87f1b587e466becd87" passHref>
+                <Link href="/problems" passHref>
                   <motion.button
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}

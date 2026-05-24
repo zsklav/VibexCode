@@ -8,8 +8,8 @@ export const runtime = "nodejs";
 
 const POINTS_BY_DIFFICULTY: Record<"easy" | "medium" | "hard", number> = {
   easy: 10,
-  medium: 25,
-  hard: 50,
+  medium: 20,
+  hard: 35,
 };
 
 function pointsFor(

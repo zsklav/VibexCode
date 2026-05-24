@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useSelector } from "react-redux";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
+import { Search, Tag, SlidersHorizontal, ChevronDown } from "lucide-react";
 import type { RootState } from "../store/store";
 import Navbar from "../components/Navbar";
 
@@ -217,31 +218,35 @@ export default function ProblemsPage() {
 
           {!loading && !error && questions.length > 0 && (
             <div className="mb-8 space-y-4">
-              <div className="flex flex-col sm:flex-row gap-4">
+              <div className="bg-white dark:bg-zinc-800 rounded-2xl shadow-[0_4px_20px_rgba(128,0,255,0.08)] p-4 flex flex-col sm:flex-row gap-3">
                 {/* Search Input */}
-                <div className="flex-1">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
                   <input
                     type="text"
-                    placeholder="Search questions by title, description, or tags..."
+                    placeholder="Search by title, description, or tags..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full p-3 rounded-lg bg-white dark:bg-[#1a1a1d] border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-colors"
+                    className="w-full pl-10 pr-3 py-2.5 rounded-xl bg-gray-50 dark:bg-zinc-900 border border-transparent focus:border-purple-500 focus:ring-2 focus:ring-purple-500/30 outline-none transition text-sm"
                   />
                 </div>
 
                 {/* Tag Filter */}
-                <div className="relative sm:w-64">
+                <div className="relative sm:w-56">
                   <button
                     type="button"
                     onClick={() => setShowTagDropdown((v) => !v)}
-                    className={`w-full text-left p-3 rounded-lg border ${
+                    className={`w-full flex items-center gap-2 px-3 py-2.5 rounded-xl border text-sm font-medium transition ${
                       selectedTag
-                        ? "bg-blue-100 dark:bg-blue-800 text-blue-800 dark:text-blue-200"
-                        : "bg-white dark:bg-[#1a1a1d] text-gray-900 dark:text-gray-200"
-                    } border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 outline-none`}
+                        ? "bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-200 border-purple-300 dark:border-purple-700"
+                        : "bg-gray-50 dark:bg-zinc-900 text-gray-700 dark:text-gray-200 border-transparent hover:border-gray-300 dark:hover:border-zinc-700"
+                    }`}
                   >
-                    {selectedTag ? `Tag: ${selectedTag}` : "Filter by tag..."}
-                    <span className="float-right ml-2">&#x25BC;</span>
+                    <Tag className="w-4 h-4 shrink-0" />
+                    <span className="flex-1 text-left truncate">
+                      {selectedTag ? selectedTag : "Filter by tag"}
+                    </span>
+                    <ChevronDown className="w-4 h-4 shrink-0 opacity-70" />
                   </button>
 
                   {showTagDropdown && (
@@ -301,17 +306,19 @@ export default function ProblemsPage() {
                 </div>
 
                 {/* Difficulty Filter */}
-                <div className="relative sm:w-44">
+                <div className="relative sm:w-48">
+                  <SlidersHorizontal className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
                   <select
                     value={selectedDifficulty}
                     onChange={(e) => setSelectedDifficulty(e.target.value)}
-                    className="w-full p-3 rounded-lg bg-white dark:bg-[#1a1a1d] border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-200 focus:ring-2 focus:ring-blue-500 outline-none"
+                    className="w-full pl-10 pr-8 py-2.5 rounded-xl bg-gray-50 dark:bg-zinc-900 border border-transparent hover:border-gray-300 dark:hover:border-zinc-700 text-gray-700 dark:text-gray-200 focus:border-purple-500 focus:ring-2 focus:ring-purple-500/30 outline-none transition text-sm font-medium appearance-none cursor-pointer"
                   >
-                    <option value="">Filter by difficulty...</option>
+                    <option value="">All difficulties</option>
                     <option value="easy">Easy</option>
                     <option value="medium">Medium</option>
                     <option value="hard">Hard</option>
                   </select>
+                  <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
                 </div>
               </div>
 

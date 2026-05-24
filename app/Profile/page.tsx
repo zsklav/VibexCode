@@ -11,7 +11,9 @@ import Navbar from "../components/Navbar";
 
 interface HistoryItem {
   title: string;
+  // Raw ISO string — HistorySection formats it as "2h ago" / "May 20".
   time: string;
+  passed?: boolean;
 }
 
 interface Submission {
@@ -63,7 +65,8 @@ export default function Page() {
           seen.add(key);
           historyArray.push({
             title: sub.questionTitle || "Untitled",
-            time: new Date(sub.submittedAt).toLocaleString(),
+            time: sub.submittedAt,
+            passed: sub.passed,
           });
         }
 

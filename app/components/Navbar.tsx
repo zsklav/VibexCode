@@ -14,6 +14,7 @@ import { getAuth, signOut } from "firebase/auth";
 import { app } from "@/lib/firebase";
 import { CgProfile } from "react-icons/cg";
 import { isAdminEmail } from "@/lib/auth";
+import { useHeartbeat } from "@/lib/useHeartbeat";
 
 // Single source of truth for navbar labels → URLs.
 // Routes keep their existing casing to avoid breaking external links/bookmarks.
@@ -42,6 +43,10 @@ const Navbar = () => {
 
   const authState = useSelector((state: RootState) => state.auth);
   const isLoggedIn = authState.status;
+
+  // Presence heartbeat — runs everywhere the Navbar is mounted, which is
+  // every authenticated page.
+  useHeartbeat(isLoggedIn ? authState.userData?.email : null);
 
   useEffect(() => {
     const checkUser = async () => {
@@ -83,7 +88,7 @@ const Navbar = () => {
   const handleVibeClick = () => {
     setMenuOpen(false);
     setShowProfileMenu(false);
-    router.push("playground?id=6884bb87f1b587e466becd87");
+    router.push("/problems");
   };
 
   const handleMobileNavClick = (path: string) => {

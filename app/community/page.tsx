@@ -58,7 +58,7 @@ interface MemberSummary {
   email: string;
   name?: string;
   username?: string;
-  status?: "Online" | "Idle" | "Busy" | "Offline";
+  status?: "Online" | "Idle" | "Offline";
 }
 
 export default function CommunityPage() {
@@ -98,27 +98,36 @@ export default function CommunityPage() {
     fetchUser();
   }, []);
 
-  // Pull the member list for the right rail. Re-fetched once per session;
-  // status is stale-ish but good enough until we wire real presence.
+  // Pull the member list for the right rail. Server derives Online/Idle
+  // from each user's lastSeen heartbeat — re-fetch every 60s so the dots
+  // actually update as people come and go.
   useEffect(() => {
-    fetch("/api/dev/users")
-      .then((r) => r.json())
-      .then((data) => {
-        if (Array.isArray(data)) setMembers(data);
-      })
-      .catch(() => setMembers([]));
+    let cancelled = false;
+    const load = () => {
+      fetch("/api/dev/users")
+        .then((r) => r.json())
+        .then((data) => {
+          if (!cancelled && Array.isArray(data)) setMembers(data);
+        })
+        .catch(() => {
+          if (!cancelled) setMembers([]);
+        });
+    };
+    load();
+    const id = setInterval(load, 60 * 1000);
+    return () => {
+      cancelled = true;
+      clearInterval(id);
+    };
   }, []);
 
   const activeForum = forums.find((f) => f.key === selected) || forums[0];
 
-  // Group members by online status so Online appears first.
+  // Group members by derived presence so Online appears first.
   const groupedMembers = {
     online: members.filter((m) => m.status === "Online"),
     idle: members.filter((m) => m.status === "Idle"),
-    busy: members.filter((m) => m.status === "Busy"),
-    offline: members.filter(
-      (m) => !m.status || m.status === "Offline"
-    ),
+    offline: members.filter((m) => !m.status || m.status === "Offline"),
   };
 
   if (loading) {
@@ -263,11 +272,6 @@ export default function CommunityPage() {
                 label="Idle"
                 color="bg-yellow-500"
                 members={groupedMembers.idle}
-              />
-              <MemberGroup
-                label="Busy"
-                color="bg-red-500"
-                members={groupedMembers.busy}
               />
               <MemberGroup
                 label="Offline"
