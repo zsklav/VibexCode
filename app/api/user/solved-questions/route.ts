@@ -48,8 +48,8 @@ export async function GET(request: Request) {
       ? (user.solvedQuestionIds as string[])
       : Array.isArray(user.solvedQuestions)
         ? (user.solvedQuestions as Array<{ questionId?: string }>)
-            .map((sq) => sq.questionId)
-            .filter((id): id is string => typeof id === "string")
+          .map((sq) => sq.questionId)
+          .filter((id): id is string => typeof id === "string")
         : [];
 
     const uniqueSolvedIds = Array.from(new Set(solvedIds));
