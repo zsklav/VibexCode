@@ -9,6 +9,10 @@ const WARNING_WINDOW_MS = 24 * 60 * 60 * 1000;
 const BAN_WINDOW_MS = 24 * 60 * 60 * 1000;
 const MAX_WARNINGS = 3;
 
+type ModerationWarning = {
+  at?: Date;
+};
+
 export async function PUT(
   req: NextRequest,
   context: { params: Promise<{ id: string }> }
@@ -56,7 +60,7 @@ export async function PUT(
     if (abuse.hit) {
       const windowStart = new Date(now.getTime() - WARNING_WINDOW_MS);
       const recentWarnings = (user.moderation?.warnings || []).filter(
-        (w) => w.at && w.at >= windowStart
+        (w: ModerationWarning) => w.at && w.at >= windowStart
       );
       const warningCount = recentWarnings.length + 1;
 
