@@ -10,6 +10,9 @@ export function toDate(value: unknown): Date | null {
     if (!value) return null;
     if (value instanceof Date) return value;
     if (value instanceof Timestamp) return value.toDate();
+    if (typeof value === "object" && typeof (value as any).toDate === "function") {
+        return (value as any).toDate();
+    }
     if (typeof value === "string" || typeof value === "number") {
         const parsed = new Date(value);
         return Number.isNaN(parsed.getTime()) ? null : parsed;

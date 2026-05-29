@@ -4,7 +4,7 @@
 
 import { NextResponse } from "next/server";
 import { db } from "@/lib/firebase-admin";
-import { derivePresence } from "@/lib/presence";
+import { derivePresence, derivePresenceDevice } from "@/lib/presence";
 import { toDate } from "@/lib/firestore-helpers";
 
 type LeanUser = {
@@ -13,6 +13,8 @@ type LeanUser = {
   username?: string;
   name?: string;
   lastSeen?: string | Date;
+  presenceDevice?: string;
+  customStatus?: string;
   activity?: string;
   stats?: { totalSolved?: number };
   createdAt?: string | Date;
@@ -46,6 +48,8 @@ export async function GET() {
     const decorated = users.map((u: any) => ({
       ...u,
       status: derivePresence(u.lastSeen || null),
+      presenceDevice: derivePresenceDevice(u.presenceDevice),
+      customStatus: u.customStatus || "",
     }));
 
     return NextResponse.json(decorated);

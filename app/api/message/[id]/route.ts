@@ -197,3 +197,69 @@ export async function DELETE(
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
+
+export async function PATCH(
+  req: NextRequest,
+  context: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await context.params;
+    const { senderId, action, emoji } = await req.json();
+
+    if (!senderId || !action) {
+      return NextResponse.json(
+        { error: "Missing required fields (senderId or action)" },
+        { status: 400 }
+      );
+    }
+
+    const msgRef = db.collection("messages").doc(id);
+    const msgSnap = await msgRef.get();
+    if (!msgSnap.exists) {
+      return NextResponse.json({ error: "Message not found" }, { status: 404 });
+    }
+
+    const data = msgSnap.data() || {};
+
+    if (action === "reaction") {
+      const safeEmoji = String(emoji || "").slice(0, 8);
+      if (!safeEmoji) {
+        return NextResponse.json({ error: "emoji is required" }, { status: 400 });
+      }
+
+      const reactions = { ...(data.reactions || {}) } as Record<string, string[]>;
+      const current = Array.isArray(reactions[safeEmoji])
+        ? reactions[safeEmoji]
+        : [];
+      reactions[safeEmoji] = current.includes(senderId)
+        ? current.filter((id) => id !== senderId)
+        : [...current, senderId];
+
+      if (reactions[safeEmoji].length === 0) delete reactions[safeEmoji];
+
+      await msgRef.set(
+        { reactions, updatedAt: FieldValue.serverTimestamp() },
+        { merge: true }
+      );
+      return NextResponse.json({ success: true, reactions });
+    }
+
+    if (action === "bookmark") {
+      const bookmarks = Array.isArray(data.bookmarks) ? data.bookmarks : [];
+      const nextBookmarks = bookmarks.includes(senderId)
+        ? bookmarks.filter((id: string) => id !== senderId)
+        : [...bookmarks, senderId];
+
+      await msgRef.set(
+        { bookmarks: nextBookmarks, updatedAt: FieldValue.serverTimestamp() },
+        { merge: true }
+      );
+      return NextResponse.json({ success: true, bookmarks: nextBookmarks });
+    }
+
+    return NextResponse.json({ error: "Unsupported action" }, { status: 400 });
+  } catch (error) {
+    console.error("PATCH /api/message/[id] error:", error);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
+}

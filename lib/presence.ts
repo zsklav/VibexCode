@@ -1,18 +1,25 @@
-// Derive presence from a user's lastSeen timestamp.
-// Single source of truth — both API and any client consumer should use this.
+// Derive rich presence from the heartbeat timestamp.
+// This keeps the API and UI aligned on the same status windows.
 
-export type PresenceStatus = "Online" | "Idle" | "Offline";
+export type PresenceStatus = "Active" | "Away" | "Offline";
+export type PresenceDevice = "Desktop" | "Mobile";
 
-const ONLINE_WINDOW_MS = 2 * 60 * 1000; // 2 min
-const IDLE_WINDOW_MS = 10 * 60 * 1000; // 10 min
+const ACTIVE_WINDOW_MS = 2 * 60 * 1000;
+const AWAY_WINDOW_MS = 5 * 60 * 1000;
 
 export function derivePresence(lastSeen?: Date | string | null): PresenceStatus {
   if (!lastSeen) return "Offline";
+
   const ts =
     lastSeen instanceof Date ? lastSeen.getTime() : new Date(lastSeen).getTime();
   if (Number.isNaN(ts)) return "Offline";
+
   const age = Date.now() - ts;
-  if (age < ONLINE_WINDOW_MS) return "Online";
-  if (age < IDLE_WINDOW_MS) return "Idle";
+  if (age < ACTIVE_WINDOW_MS) return "Active";
+  if (age < AWAY_WINDOW_MS) return "Away";
   return "Offline";
+}
+
+export function derivePresenceDevice(value?: string | null): PresenceDevice {
+  return value === "Mobile" ? "Mobile" : "Desktop";
 }

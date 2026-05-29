@@ -23,6 +23,23 @@ type UserRecord = {
   moderation?: ModerationState;
 };
 
+const GHOST_TTL_MS = 24 * 60 * 60 * 1000;
+
+async function cleanupExpiredMessages(conversationId: string) {
+  const expired = await db
+    .collection("messages")
+    .where("conversation", "==", conversationId)
+    .where("ghostExpiresAt", "<=", Timestamp.now())
+    .limit(50)
+    .get();
+
+  if (expired.empty) return;
+
+  const batch = db.batch();
+  expired.docs.forEach((doc: any) => batch.delete(doc.ref));
+  await batch.commit();
+}
+
 async function resolveUser(
   senderId: string,
   senderEmail?: string,
@@ -86,6 +103,8 @@ export async function GET(
       return NextResponse.json({ error: "Missing conversationId" }, { status: 400 });
     }
 
+    await cleanupExpiredMessages(conversationId);
+
     const snapshot = await db
       .collection("messages")
       .where("conversation", "==", conversationId)
@@ -99,6 +118,7 @@ export async function GET(
         ...data,
         createdAt: toIso(data.createdAt),
         updatedAt: toIso(data.updatedAt),
+        ghostExpiresAt: toIso(data.ghostExpiresAt),
       };
     });
 
@@ -121,9 +141,17 @@ export async function POST(
     }
 
     const body = await req.json();
-    const { senderId, senderName, senderEmail, body: messageBody, image } = body;
+    const {
+      senderId,
+      senderName,
+      senderEmail,
+      body: messageBody,
+      image,
+      ghost,
+      attachments,
+    } = body;
 
-    if (!senderId || !messageBody) {
+    if (!senderId || (!messageBody && !Array.isArray(attachments))) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
 
@@ -147,7 +175,7 @@ export async function POST(
       );
     }
 
-    const abuse = detectAbuse(String(messageBody));
+    const abuse = detectAbuse(String(messageBody || ""));
     if (abuse.hit) {
       const windowStart = new Date(now.getTime() - WARNING_WINDOW_MS);
       const warnings = user.moderation?.warnings || [];
@@ -201,14 +229,37 @@ export async function POST(
       );
     }
 
+    await cleanupExpiredMessages(conversationId);
+
+    const nowTs = Timestamp.now();
+    const ghostExpiresAt = ghost
+      ? Timestamp.fromMillis(nowTs.toMillis() + GHOST_TTL_MS)
+      : null;
+    const safeAttachments = Array.isArray(attachments)
+      ? attachments.slice(0, 6).map((file: any) => ({
+          url: String(file?.url || ""),
+          secureUrl: String(file?.secureUrl || file?.url || ""),
+          name: String(file?.name || "Attachment").slice(0, 160),
+          type: String(file?.type || "file").slice(0, 80),
+          size: Number(file?.size || 0),
+          format: String(file?.format || "").slice(0, 40),
+          resourceType: String(file?.resourceType || "raw").slice(0, 20),
+        }))
+      : [];
+
     const messageRef = await db.collection("messages").add({
       conversation: conversationId,
       sender: senderId,
       senderName: senderName || "",
-      body: messageBody,
+      body: messageBody || "",
       image: image || "",
-      createdAt: FieldValue.serverTimestamp(),
-      updatedAt: FieldValue.serverTimestamp(),
+      ghost: Boolean(ghost),
+      ghostExpiresAt,
+      attachments: safeAttachments,
+      reactions: {},
+      bookmarks: [],
+      createdAt: nowTs,
+      updatedAt: nowTs,
     });
 
     const created = await messageRef.get();
@@ -220,6 +271,7 @@ export async function POST(
         ...data,
         createdAt: toIso(data.createdAt),
         updatedAt: toIso(data.updatedAt),
+        ghostExpiresAt: toIso(data.ghostExpiresAt),
       },
       { status: 201 }
     );

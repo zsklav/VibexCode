@@ -15,15 +15,20 @@ export function useHeartbeat(email: string | null | undefined) {
 
     let cancelled = false;
 
-    const ping = () => {
+    const ping = (activity: "heartbeat" | "typing" = "heartbeat") => {
       if (cancelled) return;
       if (typeof document !== "undefined" && document.visibilityState !== "visible")
         return;
+      const device =
+        typeof navigator !== "undefined" &&
+        /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent)
+          ? "Mobile"
+          : "Desktop";
       // Use keepalive so the request survives a tab-close race.
       fetch("/api/user/heartbeat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: target }),
+        body: JSON.stringify({ email: target, device, activity }),
         keepalive: true,
       }).catch(() => {
         // Network blip — next interval will retry.
@@ -41,11 +46,16 @@ export function useHeartbeat(email: string | null | undefined) {
       if (document.visibilityState === "visible") ping();
     };
     document.addEventListener("visibilitychange", onVisibilityChange);
+    const onActivity = () => ping("typing");
+    window.addEventListener("keydown", onActivity);
+    window.addEventListener("pointerdown", onActivity);
 
     return () => {
       cancelled = true;
       clearInterval(id);
       document.removeEventListener("visibilitychange", onVisibilityChange);
+      window.removeEventListener("keydown", onActivity);
+      window.removeEventListener("pointerdown", onActivity);
     };
   }, [email]);
 }

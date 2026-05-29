@@ -14,6 +14,7 @@ export const config = {
 };
 
 let io: IOServer | undefined;
+const boardViewers = new Map<string, Map<string, { userId: string; name: string }>>();
 
 type ModerationState = {
     warnings?: Array<{ at?: string | Date }>;
@@ -72,6 +73,84 @@ export default function handler(
                 }
             });
 
+            socket.on("board:join", ({ roomId, userId, name }) => {
+                if (typeof roomId !== "string") return;
+                socket.join(`board:${roomId}`);
+                const viewers = boardViewers.get(roomId) || new Map();
+                viewers.set(socket.id, {
+                    userId: typeof userId === "string" ? userId : socket.id,
+                    name: typeof name === "string" ? name : "Collaborator",
+                });
+                boardViewers.set(roomId, viewers);
+                io?.to(`board:${roomId}`).emit("board:presence", {
+                    roomId,
+                    collaborators: Array.from(viewers.values()),
+                });
+            });
+
+            socket.on("board:leave", ({ roomId }) => {
+                if (typeof roomId !== "string") return;
+                socket.leave(`board:${roomId}`);
+                const viewers = boardViewers.get(roomId);
+                viewers?.delete(socket.id);
+                io?.to(`board:${roomId}`).emit("board:presence", {
+                    roomId,
+                    collaborators: Array.from(viewers?.values() || []),
+                });
+            });
+
+            socket.on("board:update", ({ roomId, elements, userId }) => {
+                if (typeof roomId !== "string" || !Array.isArray(elements)) return;
+                socket.to(`board:${roomId}`).emit("board:update", {
+                    roomId,
+                    elements,
+                    userId,
+                    updatedAt: new Date().toISOString(),
+                });
+            });
+
+            socket.on("board:save", ({ roomId, elements, userId }) => {
+                if (typeof roomId !== "string" || !Array.isArray(elements)) return;
+                socket.to(`board:${roomId}`).emit("board:save", {
+                    roomId,
+                    elements,
+                    userId,
+                    savedAt: new Date().toISOString(),
+                });
+            });
+
+            socket.on("board:cursor", ({ roomId, userId, name, x, y }) => {
+                if (typeof roomId !== "string") return;
+                socket.to(`board:${roomId}`).emit("board:cursor", {
+                    roomId,
+                    userId,
+                    name,
+                    x,
+                    y,
+                });
+            });
+
+            socket.on("poll:create", ({ conversationId, poll, message }) => {
+                if (typeof conversationId !== "string") return;
+                io?.to(conversationId).emit("poll:update", { poll });
+                if (message) io?.to(conversationId).emit("message", message);
+            });
+
+            socket.on("poll:vote", ({ conversationId, poll }) => {
+                if (typeof conversationId !== "string" || !poll) return;
+                io?.to(conversationId).emit("poll:update", { poll });
+            });
+
+            socket.on("poll:expire", ({ conversationId, pollId }) => {
+                if (typeof conversationId !== "string") return;
+                io?.to(conversationId).emit("poll:expire", { pollId });
+            });
+
+            socket.on("theme:update", ({ userId, theme }) => {
+                if (typeof userId !== "string" || typeof theme !== "string") return;
+                io?.emit("theme:update", { userId, theme });
+            });
+
             socket.on("message", async (message) => {
                 const { conversationId, senderId, body } = message || {};
                 if (typeof conversationId !== "string") {
@@ -109,6 +188,14 @@ export default function handler(
             });
 
             socket.on("disconnect", () => {
+                for (const [roomId, viewers] of boardViewers.entries()) {
+                    if (!viewers.has(socket.id)) continue;
+                    viewers.delete(socket.id);
+                    io?.to(`board:${roomId}`).emit("board:presence", {
+                        roomId,
+                        collaborators: Array.from(viewers.values()),
+                    });
+                }
                 console.log(`🔴 Socket disconnected: ${socket.id}`);
             });
         });

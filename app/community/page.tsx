@@ -59,7 +59,9 @@ interface MemberSummary {
   email: string;
   name?: string;
   username?: string;
-  status?: "Online" | "Idle" | "Offline";
+  status?: "Active" | "Away" | "Offline";
+  presenceDevice?: "Desktop" | "Mobile";
+  customStatus?: string;
 }
 
 export default function CommunityPage() {
@@ -69,6 +71,13 @@ export default function CommunityPage() {
   const [isMobile, setIsMobile] = useState(false);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [members, setMembers] = useState<MemberSummary[]>([]);
+
+  useEffect(() => {
+    const channel = new URLSearchParams(window.location.search).get("channel");
+    if (channel && forums.some((forum) => forum.key === channel)) {
+      setSelected(channel);
+    }
+  }, []);
 
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < 768);
@@ -100,8 +109,8 @@ export default function CommunityPage() {
     fetchUser();
   }, []);
 
-  // Pull the member list for the right rail. Server derives Online/Idle
-  // from each user's lastSeen heartbeat — re-fetch every 60s so the dots
+  // Pull the member list for the right rail. Server derives Active/Away
+  // from each user's lastSeen heartbeat. Re-fetch every 60s so the dots
   // actually update as people come and go.
   useEffect(() => {
     let cancelled = false;
@@ -125,10 +134,10 @@ export default function CommunityPage() {
 
   const activeForum = forums.find((f) => f.key === selected) || forums[0];
 
-  // Group members by derived presence so Online appears first.
+  // Group members by derived presence so Active appears first.
   const groupedMembers = {
-    online: members.filter((m) => m.status === "Online"),
-    idle: members.filter((m) => m.status === "Idle"),
+    active: members.filter((m) => m.status === "Active"),
+    away: members.filter((m) => m.status === "Away"),
     offline: members.filter((m) => !m.status || m.status === "Offline"),
   };
 
@@ -261,20 +270,20 @@ export default function CommunityPage() {
               <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
                 {members.length} total ·{" "}
                 <span className="text-green-600">
-                  {groupedMembers.online.length} online
+                  {groupedMembers.active.length} active
                 </span>
               </p>
             </div>
             <div className="flex-1 overflow-y-auto p-2 space-y-4">
               <MemberGroup
-                label="Online"
+                label="Active"
                 color="bg-green-500"
-                members={groupedMembers.online}
+                members={groupedMembers.active}
               />
               <MemberGroup
-                label="Idle"
+                label="Away"
                 color="bg-yellow-500"
-                members={groupedMembers.idle}
+                members={groupedMembers.away}
               />
               <MemberGroup
                 label="Offline"
@@ -312,7 +321,7 @@ const MemberGroup = ({
           const display = m.name || m.username || m.email;
           const initial = (display.charAt(0) || "?").toUpperCase();
           return (
-            <li key={m._id}>
+            <li key={m._id} className="group relative">
               <a
                 href={`/u/${encodeURIComponent(m.email)}`}
                 className={`flex items-center gap-2 px-2 py-1.5 rounded hover:bg-gray-100 dark:hover:bg-zinc-800 ${
@@ -328,7 +337,23 @@ const MemberGroup = ({
                   />
                 </div>
                 <span className="text-sm truncate flex-1">{display}</span>
+                <span className="rounded border border-gray-200 px-1.5 py-0.5 text-[10px] text-gray-500 dark:border-zinc-700">
+                  {m.presenceDevice || "Desktop"}
+                </span>
               </a>
+              <div className="pointer-events-none absolute right-full top-0 z-20 mr-2 hidden w-56 rounded-lg border border-gray-200 bg-white p-3 text-xs shadow-xl group-hover:block dark:border-zinc-700 dark:bg-zinc-900">
+                <p className="font-semibold text-gray-900 dark:text-white">
+                  {display}
+                </p>
+                <p className="mt-1 text-gray-500 dark:text-gray-400">
+                  {m.status || "Offline"} on {m.presenceDevice || "Desktop"}
+                </p>
+                {m.customStatus && (
+                  <p className="mt-2 rounded bg-gray-50 px-2 py-1 text-gray-700 dark:bg-zinc-800 dark:text-gray-200">
+                    {m.customStatus}
+                  </p>
+                )}
+              </div>
             </li>
           );
         })}

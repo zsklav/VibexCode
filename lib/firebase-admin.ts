@@ -14,6 +14,9 @@ import Quiz from "@/models/Quizzes";
 import Clan from "@/models/Clans";
 import ClanMember from "@/models/ClanMembers";
 import Follow from "@/models/Follows";
+import Whiteboard from "@/models/Whiteboards";
+import Poll from "@/models/Polls";
+import UserTheme from "@/models/UserThemes";
 
 type ServiceAccount = {
     projectId: string;
@@ -80,6 +83,9 @@ const collectionsMap: Record<string, any> = {
     clans: Clan,
     clanMembers: ClanMember,
     follows: Follow,
+    whiteboards: Whiteboard,
+    polls: Poll,
+    userThemes: UserTheme,
 };
 
 // Mock Timestamp class
