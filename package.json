@@ -16,6 +16,7 @@
     "@reduxjs/toolkit": "^2.8.2",
     "@tinymce/tinymce-react": "^6.2.1",
     "@types/react-syntax-highlighter": "^15.5.13",
+    "@types/three": "^0.184.1",
     "ace-builds": "^1.43.0",
     "aos": "^2.3.4",
     "appwrite": "^18.1.1",
@@ -53,6 +54,7 @@
     "socket.io": "^4.8.1",
     "socket.io-client": "^4.8.1",
     "tailwind-merge": "^3.3.1",
+    "three": "^0.184.0",
     "uuid": "^11.1.0"
   },
   "devDependencies": {

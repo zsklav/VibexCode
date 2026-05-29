@@ -1,37 +1,45 @@
 "use client";
 
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { AnimatePresence, motion } from "framer-motion";
+import {
+  Code2,
+  Compass,
+  LayoutDashboard,
+  LogOut,
+  Menu,
+  Rocket,
+  Settings,
+  Shield,
+  User,
+  Users,
+  X,
+} from "lucide-react";
+import { useDispatch, useSelector } from "react-redux";
+import { getAuth, signOut } from "firebase/auth";
+
 import ThemeToggle from "./ThemeToggle";
 import Logo from "./Logo";
-import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch, RootState } from "../store/store";
 import { login, logout as logoutAction } from "../store/authSlice";
 import authservice from "@/app/auth/firebase-auth";
-import { getAuth, signOut } from "firebase/auth";
 import { app } from "@/lib/firebase";
-import { CgProfile } from "react-icons/cg";
 import { isAdminEmail } from "@/lib/auth";
 import { useHeartbeat } from "@/lib/useHeartbeat";
+import { cn } from "@/lib/utils";
 
-// Single source of truth for navbar labels → URLs.
-// Routes keep their existing casing to avoid breaking external links/bookmarks.
-const NAV_ROUTES: Record<string, string> = {
-  Problems: "/problems",
-  Explore: "/Explore",
-  Dashboard: "/Dashboard",
-  Community: "/community",
-};
+const NAV_ITEMS = [
+  { label: "Problems", href: "/problems", icon: Code2 },
+  { label: "Explore", href: "/Explore", icon: Compass },
+  { label: "Dashboard", href: "/Dashboard", icon: LayoutDashboard },
+  { label: "Community", href: "/community", icon: Users },
+];
 
-const menuItemVariants = {
-  hidden: { opacity: 0, x: -10 },
-  visible: (i: number) => ({
-    opacity: 1,
-    x: 0,
-    transition: { delay: i * 0.05 },
-  }),
+const menuVariants = {
+  hidden: { opacity: 0, y: -8, scale: 0.98 },
+  visible: { opacity: 1, y: 0, scale: 1 },
 };
 
 const Navbar = () => {
@@ -40,68 +48,45 @@ const Navbar = () => {
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const profileRef = useRef<HTMLDivElement | null>(null);
   const dispatch = useDispatch<AppDispatch>();
-
   const authState = useSelector((state: RootState) => state.auth);
   const isLoggedIn = authState.status;
 
-  // Presence heartbeat — runs everywhere the Navbar is mounted, which is
-  // every authenticated page.
   useHeartbeat(isLoggedIn ? authState.userData?.email : null);
 
   useEffect(() => {
     const checkUser = async () => {
       try {
         const userData = await authservice.checkUser();
-        if (userData) {
-          dispatch(login({ status: true, userData }));
-        } else {
-          dispatch(login({ status: false, userData: null }));
-        }
+        dispatch(login({ status: Boolean(userData), userData: userData || null }));
       } catch (error) {
         console.error("Error checking user:", error);
         dispatch(login({ status: false, userData: null }));
       }
     };
 
-    if (!isLoggedIn) {
-      checkUser();
-    }
+    if (!isLoggedIn) checkUser();
   }, [dispatch, isLoggedIn]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (
-        profileRef.current &&
-        !profileRef.current.contains(event.target as Node)
-      ) {
+      if (profileRef.current && !profileRef.current.contains(event.target as Node)) {
         setShowProfileMenu(false);
       }
     };
-    if (showProfileMenu) {
-      document.addEventListener("mousedown", handleClickOutside);
-    }
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
+    if (showProfileMenu) document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [showProfileMenu]);
 
-  const handleVibeClick = () => {
+  const navigate = (href: string) => {
     setMenuOpen(false);
     setShowProfileMenu(false);
-    router.push("/problems");
-  };
-
-  const handleMobileNavClick = (path: string) => {
-    setMenuOpen(false);
-    setShowProfileMenu(false);
-    router.push(path);
+    router.push(href);
   };
 
   const handleLogout = async () => {
     try {
       dispatch(logoutAction());
-      const auth = getAuth(app);
-      await signOut(auth);
+      await signOut(getAuth(app));
       await authservice.logout();
       router.push("/login");
       router.refresh();
@@ -112,244 +97,175 @@ const Navbar = () => {
     }
   };
 
-  const navItems = ["Problems", "Explore", "Dashboard", "Community"];
-
   return (
-    <nav className="w-full py-4 px-6 md:px-8 relative z-30 bg-transparent dark:bg-[#020612] transition-all">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          {/* Mobile menu button */}
-          <motion.button
-            whileTap={{ scale: 0.9 }}
+    <nav className="sticky top-0 z-50 w-full px-3 py-3 sm:px-5">
+      <div className="mx-auto flex max-w-7xl items-center justify-between rounded-2xl border border-white/50 bg-white/74 px-3 py-2 shadow-[0_18px_60px_rgba(15,23,42,0.12)] backdrop-blur-xl dark:border-white/10 dark:bg-zinc-950/68 dark:shadow-black/30">
+        <div className="flex items-center gap-2">
+          <button
             onClick={() => setMenuOpen((prev) => !prev)}
-            className="md:hidden text-3xl text-purple-600 dark:text-teal-300 focus:outline-none cursor-pointer2"
+            className="rounded-xl p-2 text-zinc-700 transition hover:bg-zinc-100 dark:text-zinc-200 dark:hover:bg-white/10 md:hidden"
+            aria-label={menuOpen ? "Close navigation menu" : "Open navigation menu"}
           >
-            <motion.span
-              initial={false}
-              animate={{ rotate: menuOpen ? 45 : 0 }}
-              className="block"
-            >
-              {menuOpen ? "✕" : "☰"}
-            </motion.span>
-          </motion.button>
-          <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.5 }}
-          >
-            <Logo />
-          </motion.div>
+            {menuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+          </button>
+          <Logo />
         </div>
 
-        {/* Main navigation items (desktop) */}
-        <div className="hidden md:flex items-center gap-6 cursor-pointer2">
-          {navItems.map((item) => (
-            <motion.div
-              key={item}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-            >
+        <div className="hidden items-center gap-1 md:flex">
+          {NAV_ITEMS.map((item) => {
+            const Icon = item.icon;
+            return (
               <Link
-                href={NAV_ROUTES[item]}
-                className="text-gray-800 dark:text-white font-medium hover:text-purple-600 dark:hover:text-purple-400 transition-all cursor-pointer2"
+                key={item.href}
+                href={item.href}
+                className="group inline-flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-zinc-700 transition hover:bg-zinc-950 hover:text-white dark:text-zinc-200 dark:hover:bg-white dark:hover:text-zinc-950"
               >
-                {item}
+                <Icon className="h-4 w-4 opacity-70 transition group-hover:opacity-100" />
+                {item.label}
               </Link>
-            </motion.div>
-          ))}
+            );
+          })}
         </div>
 
-        {/* Right section */}
-        <div className="flex items-center gap-2 min-w-[110px] justify-end relative ">
-          {/* ThemeToggle always first */}
+        <div className="flex items-center gap-2">
           <ThemeToggle />
-
           {isLoggedIn ? (
-            <>
-              {/* Profile Button and Popup */}
-              <div className="relative" ref={profileRef}>
-                <button
-                  onClick={() => setShowProfileMenu((v) => !v)}
-                  className="p-2 rounded-full focus:outline-none text-black dark:text-white dark:hover:bg-zinc-800 transition cursor-pointer2"
-                  title="Profile"
-                  aria-haspopup="menu"
-                  aria-expanded={showProfileMenu}
-                >
-                  <CgProfile className="w-7 h-7" />
-                </button>
-                {/* Dropdown */}
-                <AnimatePresence>
-                  {showProfileMenu && (
-                    <motion.div
-                      initial={{ opacity: 0, y: -10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -10 }}
-                      transition={{ duration: 0.17 }}
-                      className="absolute right-0 mt-2 w-48 bg-white dark:bg-zinc-900 rounded-lg shadow-lg p-3 flex flex-col gap-1 z-50"
-                    >
-                      <button
-                        onClick={() => {
-                          setShowProfileMenu(false);
-                          router.push("/Profile");
-                        }}
-                        className="py-2 px-3 hover:bg-zinc-100 dark:hover:bg-zinc-800 dark:text-white rounded text-left transition"
-                      >
-                        Profile
-                      </button>
-                      <button
-                        onClick={() => {
-                          setShowProfileMenu(false);
-                          router.push("/submissions");
-                        }}
-                        className="py-2 px-3 hover:bg-zinc-100 dark:hover:bg-zinc-800 dark:text-white rounded text-left transition"
-                      >
-                        Submissions
-                      </button>
-                      <button
-                        onClick={() => {
-                          setShowProfileMenu(false);
-                          router.push("/settings");
-                        }}
-                        className="py-2 px-3 hover:bg-zinc-100 dark:hover:bg-zinc-800 dark:text-white rounded text-left transition"
-                      >
-                        Settings
-                      </button>
-                      {isAdminEmail(authState.userData?.email) && (
-                        <button
-                          onClick={() => {
-                            setShowProfileMenu(false);
-                            router.push("/admin");
-                          }}
-                          className="py-2 px-3 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded text-left text-purple-600 dark:text-purple-300 font-medium transition"
-                        >
-                          🛡️ Admin
-                        </button>
-                      )}
-                      <button
-                        onClick={handleLogout}
-                        className="py-2 px-3 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded text-left text-red-500 transition"
-                      >
-                        Logout
-                      </button>
-                      <button
-                        onClick={handleVibeClick}
-                        className="py-2 px-3 mt-1 rounded font-semibold bg-gradient-to-r from-pink-500 via-fuchsia-500 to-rose-500 text-white shadow-[0_0_10px_#ff00ff] hover:opacity-90 transition"
-                      >
-                        Start Vibing
-                      </button>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
-            </>
+            <div className="relative" ref={profileRef}>
+              <button
+                onClick={() => setShowProfileMenu((value) => !value)}
+                className="flex items-center gap-2 rounded-xl border border-zinc-200 bg-white px-2.5 py-2 text-sm font-medium text-zinc-900 shadow-sm transition hover:border-zinc-300 dark:border-white/10 dark:bg-white/10 dark:text-white dark:hover:bg-white/15"
+                aria-haspopup="menu"
+                aria-expanded={showProfileMenu}
+              >
+                <User className="h-4 w-4" />
+                <span className="hidden max-w-28 truncate sm:inline">
+                  {authState.userData?.name || "Account"}
+                </span>
+              </button>
+              <AnimatePresence>
+                {showProfileMenu && (
+                  <motion.div
+                    variants={menuVariants}
+                    initial="hidden"
+                    animate="visible"
+                    exit="hidden"
+                    transition={{ duration: 0.16 }}
+                    className="absolute right-0 mt-3 w-56 overflow-hidden rounded-2xl border border-zinc-200 bg-white p-2 shadow-2xl dark:border-white/10 dark:bg-zinc-950"
+                  >
+                    <MenuButton icon={User} label="Profile" onClick={() => navigate("/Profile")} />
+                    <MenuButton icon={Code2} label="Submissions" onClick={() => navigate("/submissions")} />
+                    <MenuButton icon={Settings} label="Settings" onClick={() => navigate("/settings")} />
+                    {isAdminEmail(authState.userData?.email) && (
+                      <MenuButton icon={Shield} label="Admin" onClick={() => navigate("/admin")} accent />
+                    )}
+                    <div className="my-1 h-px bg-zinc-200 dark:bg-white/10" />
+                    <MenuButton icon={Rocket} label="Start Vibing" onClick={() => navigate("/problems")} strong />
+                    <MenuButton icon={LogOut} label="Logout" onClick={handleLogout} danger />
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
           ) : (
-            // LOGGED OUT: Show only Login button
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={() => router.push("/login")}
-              className="bg-gradient-to-r from-pink-500 via-fuchsia-500 to-rose-500 text-white px-4 py-2 rounded-full font-semibold shadow-[0_0_10px_#ff00ff] hover:opacity-90 transition-all text-sm"
-            >
-              Log In
-            </motion.button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => navigate("/login")}
+                className="hidden rounded-xl px-3 py-2 text-sm font-semibold text-zinc-700 transition hover:bg-zinc-100 dark:text-zinc-200 dark:hover:bg-white/10 sm:inline-flex"
+              >
+                Log In
+              </button>
+              <button
+                onClick={() => navigate("/signup")}
+                className="inline-flex items-center gap-2 rounded-xl bg-zinc-950 px-3.5 py-2 text-sm font-semibold text-white shadow-lg shadow-teal-500/20 transition hover:-translate-y-0.5 hover:bg-zinc-800 dark:bg-white dark:text-zinc-950 dark:hover:bg-zinc-200"
+              >
+                <Rocket className="h-4 w-4" />
+                Join
+              </button>
+            </div>
           )}
         </div>
       </div>
 
-      {/* Overlay for mobile */}
       <AnimatePresence>
         {menuOpen && (
           <motion.div
-            className="fixed inset-0 bg-black/30 backdrop-blur-sm z-20 md:hidden"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={() => setMenuOpen(false)}
-          />
-        )}
-      </AnimatePresence>
-
-      {/* Mobile Menu */}
-      <AnimatePresence>
-        {menuOpen && (
-          <motion.ul
-            initial={{ opacity: 0, y: -20 }}
+            initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            transition={{ duration: 0.4 }}
-            className="absolute top-full left-0 w-full md:hidden bg-white dark:bg-zinc-900 rounded-b-xl p-6 shadow-xl z-30 space-y-4"
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.2 }}
+            className="mx-auto mt-2 max-w-7xl rounded-2xl border border-white/50 bg-white/92 p-3 shadow-2xl backdrop-blur-xl dark:border-white/10 dark:bg-zinc-950/92 md:hidden"
           >
-            {navItems.map((item, i) => (
-              <motion.li
-                key={item}
-                custom={i}
-                variants={menuItemVariants}
-                initial="hidden"
-                animate="visible"
-                exit="hidden"
-              >
-                <button
-                  onClick={() => handleMobileNavClick(NAV_ROUTES[item])}
-                  className="text-left w-full text-gray-800 dark:text-white text-base font-medium hover:text-purple-600 dark:hover:text-purple-400 transition-all"
-                >
-                  {item}
-                </button>
-              </motion.li>
-            ))}
-            <motion.li
-              custom={3}
-              variants={menuItemVariants}
-              initial="hidden"
-              animate="visible"
-              exit="hidden"
-              className="pt-2 border-t border-zinc-300 dark:border-zinc-700"
-            >
-              <div className="flex flex-col gap-4 mt-3 cursor-pointer2">
+            <div className="grid gap-1">
+              {NAV_ITEMS.map((item) => {
+                const Icon = item.icon;
+                return (
+                  <button
+                    key={item.href}
+                    onClick={() => navigate(item.href)}
+                    className="flex items-center gap-3 rounded-xl px-3 py-3 text-left text-sm font-semibold text-zinc-800 transition hover:bg-zinc-100 dark:text-zinc-100 dark:hover:bg-white/10"
+                  >
+                    <Icon className="h-4 w-4 text-teal-500" />
+                    {item.label}
+                  </button>
+                );
+              })}
+              <div className="mt-2 grid grid-cols-2 gap-2 border-t border-zinc-200 pt-3 dark:border-white/10">
                 {isLoggedIn ? (
                   <>
-                    <button
-                      onClick={() => handleMobileNavClick("/Profile")}
-                      className="text-purple-600 dark:text-white text-xl hover:underline scale-90"
-                      title="Profile"
-                    >
+                    <button onClick={() => navigate("/Profile")} className="rounded-xl bg-zinc-100 px-3 py-2 text-sm font-semibold dark:bg-white/10">
                       Profile
                     </button>
-                    <button
-                      onClick={handleLogout}
-                      className="text-red-500 hover:underline font-medium"
-                    >
+                    <button onClick={handleLogout} className="rounded-xl bg-red-50 px-3 py-2 text-sm font-semibold text-red-600 dark:bg-red-950/30">
                       Logout
                     </button>
                   </>
                 ) : (
                   <>
-                    <button
-                      onClick={() => handleMobileNavClick("/login")}
-                      className="text-purple-600 dark:text-teal-300 font-medium hover:underline"
-                    >
+                    <button onClick={() => navigate("/login")} className="rounded-xl bg-zinc-100 px-3 py-2 text-sm font-semibold dark:bg-white/10">
                       Log In
                     </button>
-                    <button
-                      onClick={() => handleMobileNavClick("/signup")}
-                      className="bg-gradient-to-r from-purple-400 to-pink-500 text-white px-4 py-2 rounded-full font-semibold shadow hover:opacity-90 transition-all text-sm cursor-pointer2"
-                    >
+                    <button onClick={() => navigate("/signup")} className="rounded-xl bg-zinc-950 px-3 py-2 text-sm font-semibold text-white dark:bg-white dark:text-zinc-950">
                       Sign Up
                     </button>
                   </>
                 )}
-                <button
-                  onClick={handleVibeClick}
-                  className="px-4 py-2 rounded-full bg-gradient-to-r from-pink-500 via-fuchsia-500 to-rose-500 animate-pulse text-white text-sm font-semibold shadow-[0_0_10px_#ff00ff] hover:opacity-90 transition-all duration-300"
-                >
-                  Start Vibing
-                </button>
               </div>
-            </motion.li>
-          </motion.ul>
+            </div>
+          </motion.div>
         )}
       </AnimatePresence>
     </nav>
   );
 };
+
+function MenuButton({
+  icon: Icon,
+  label,
+  onClick,
+  accent,
+  danger,
+  strong,
+}: {
+  icon: React.ComponentType<{ className?: string }>;
+  label: string;
+  onClick: () => void;
+  accent?: boolean;
+  danger?: boolean;
+  strong?: boolean;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className={cn(
+        "flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-medium transition hover:bg-zinc-100 dark:hover:bg-white/10",
+        accent && "text-teal-600 dark:text-teal-300",
+        danger && "text-red-600 dark:text-red-400",
+        strong && "bg-zinc-950 text-white hover:bg-zinc-800 dark:bg-white dark:text-zinc-950 dark:hover:bg-zinc-200"
+      )}
+    >
+      <Icon className="h-4 w-4" />
+      {label}
+    </button>
+  );
+}
 
 export default Navbar;
