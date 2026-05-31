@@ -1,30 +1,19 @@
-// GET  /api/quizzes              — list upcoming quizzes (date >= now)
-// GET  /api/quizzes?scope=all    — list every quiz (admin UI)
-// POST /api/quizzes              — admin-only: create a quiz
+// GET  /api/quizzes              — upcoming quizzes (date >= now)
+// GET  /api/quizzes?scope=all    — every quiz (admin UI)
+// POST /api/quizzes              — admin-only create
 //   Body: { userEmail, title, description?, date (ISO string), registrationLink? }
 
 import { NextRequest, NextResponse } from "next/server";
-import connectDB from "@/lib/mongodb";
-import Quizzes from "@/models/Quizzes";
+import { listQuizzes, createQuiz } from "@/lib/quizzes";
 import { isAdminEmail } from "@/lib/auth";
 
 export const runtime = "nodejs";
 
 export async function GET(req: NextRequest) {
   try {
-    await connectDB();
-
     const { searchParams } = new URL(req.url);
-    const scope = searchParams.get("scope");
-
-    // `?scope=all` returns every quiz, newest-first — used by the admin
-    // panel. Default (no scope) keeps the public "upcoming only" behavior.
-    const filter = scope === "all" ? {} : { date: { $gte: new Date() } };
-    const sort: Record<string, 1 | -1> =
-      scope === "all" ? { date: -1 } : { date: 1 };
-
-    const quizzes = await Quizzes.find(filter).sort(sort).limit(100).lean();
-
+    const scope = searchParams.get("scope") === "all" ? "all" : "upcoming";
+    const quizzes = await listQuizzes({ scope });
     return NextResponse.json({ success: true, quizzes });
   } catch (error) {
     const message =
@@ -39,8 +28,7 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { userEmail, title, description, date, registrationLink } =
-      body || {};
+    const { userEmail, title, description, date, registrationLink } = body || {};
 
     if (!isAdminEmail(userEmail)) {
       return NextResponse.json(
@@ -49,39 +37,21 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    if (!title?.trim() || !date) {
-      return NextResponse.json(
-        { success: false, error: "title and date are required" },
-        { status: 400 }
-      );
-    }
-
-    const parsedDate = new Date(date);
-    if (Number.isNaN(parsedDate.getTime())) {
-      return NextResponse.json(
-        { success: false, error: "date must be a valid ISO date string" },
-        { status: 400 }
-      );
-    }
-
-    await connectDB();
-
-    const quiz = await Quizzes.create({
-      title: title.trim(),
-      description: typeof description === "string" ? description.trim() : "",
-      date: parsedDate,
-      registrationLink:
-        typeof registrationLink === "string" ? registrationLink.trim() : "",
-      createdByEmail: userEmail.toLowerCase(),
+    const quiz = await createQuiz({
+      title,
+      description,
+      date,
+      registrationLink,
+      createdByEmail: userEmail,
     });
 
     return NextResponse.json({ success: true, quiz }, { status: 201 });
   } catch (error) {
     const message =
       error instanceof Error ? error.message : "Failed to create quiz";
-    return NextResponse.json(
-      { success: false, error: message },
-      { status: 500 }
-    );
+    const status = message.includes("required") || message.includes("valid")
+      ? 400
+      : 500;
+    return NextResponse.json({ success: false, error: message }, { status });
   }
 }

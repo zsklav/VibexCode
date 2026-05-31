@@ -1,0 +1,112 @@
+rules_version = '2';
+
+// SECURITY MODEL
+// --------------
+// All writes go through API routes that use the Firebase Admin SDK. The
+// Admin SDK bypasses these rules entirely, so the rules here only need to
+// govern what the *client* SDK (lib/firebase.ts → getFirestore) can do.
+//
+// Currently the client SDK only READS — leaderboard widgets, profile pages,
+// the network widget, etc. There are no client-side writes anywhere in the
+// app. So the rule set is intentionally "read where needed, deny everything
+// else." If you ever add a direct client write, write a specific rule for
+// that collection instead of opening up the whole thing.
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isAuthed() {
+      return request.auth != null;
+    }
+
+    // === Public reads (signed-out users can hit these) ===
+
+    // Leaderboard is shown on the homepage / Lead widget — public.
+    match /leaderboard/{email} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    // Topics + questions power /problems and /Explore — public reads.
+    match /topics/{tag} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    match /questions/{questionId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    // === Authenticated reads ===
+
+    // Profiles are visible to any signed-in user (Network widget, /u/:email).
+    match /users/{email} {
+      allow read: if isAuthed();
+      allow write: if false;
+    }
+
+    // Quizzes — /Explore + /admin/quizzes.
+    match /quizzes/{quizId} {
+      allow read: if isAuthed();
+      allow write: if false;
+    }
+
+    // Follow graph reads — /Profile, /u/:email, FriendsSection.
+    match /follows/{pairId} {
+      allow read: if isAuthed();
+      allow write: if false;
+    }
+
+    // Clans + memberships + pointer.
+    match /clans/{clanId} {
+      allow read: if isAuthed();
+      allow write: if false;
+
+      match /members/{email} {
+        allow read: if isAuthed();
+        allow write: if false;
+      }
+    }
+
+    match /userClans/{email} {
+      allow read: if isAuthed();
+      allow write: if false;
+    }
+
+    // Conversations + messages — /community chat surface.
+    match /conversations/{convId} {
+      allow read: if isAuthed();
+      allow write: if false;
+    }
+
+    match /messages/{messageId} {
+      allow read: if isAuthed();
+      allow write: if false;
+    }
+
+    // === Owner-only reads ===
+
+    // Tasks are personal — only the owner should be able to read theirs.
+    // Compare against firebaseUid since tasks.userId is the Firebase UID.
+    match /tasks/{taskId} {
+      allow read: if isAuthed() && resource.data.userId == request.auth.uid;
+      allow write: if false;
+    }
+
+    // Submissions — owner-only via email match. The submissions list page
+    // (/submissions) reads via the REST API (Admin SDK) so this client-side
+    // rule only fires if someone hits Firestore directly.
+    match /submissions/{submissionId} {
+      allow read: if isAuthed() &&
+                  request.auth.token.email != null &&
+                  resource.data.userEmail == request.auth.token.email.lower();
+      allow write: if false;
+    }
+
+    // Default deny — anything not explicitly matched above is rejected.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

@@ -9,22 +9,16 @@
 // be spoofed until we add server-verified auth tokens.
 
 import { NextRequest, NextResponse } from "next/server";
-import connectDB from "@/lib/mongodb";
-import Follows from "@/models/Follows";
+import { followUser, unfollowUser, getFollowState } from "@/lib/follows";
+import { normalizeEmail } from "@/lib/users";
 
 export const runtime = "nodejs";
-
-function normalize(email: unknown): string | null {
-  if (typeof email !== "string") return null;
-  const v = email.trim().toLowerCase();
-  return v.length > 0 ? v : null;
-}
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const follower = normalize(body?.followerEmail);
-    const following = normalize(body?.followingEmail);
+    const follower = normalizeEmail(body?.followerEmail);
+    const following = normalizeEmail(body?.followingEmail);
 
     if (!follower || !following) {
       return NextResponse.json(
@@ -39,26 +33,11 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    await connectDB();
-
-    // Idempotent: re-following returns 200 instead of 409.
-    try {
-      await Follows.create({
-        followerEmail: follower,
-        followingEmail: following,
-      });
-    } catch (e) {
-      const code = (e as { code?: number })?.code;
-      if (code === 11000) {
-        return NextResponse.json({
-          success: true,
-          message: "Already following",
-        });
-      }
-      throw e;
-    }
-
-    return NextResponse.json({ success: true });
+    const { alreadyFollowing } = await followUser(follower, following);
+    return NextResponse.json({
+      success: true,
+      ...(alreadyFollowing ? { message: "Already following" } : {}),
+    });
   } catch (error) {
     const message =
       error instanceof Error ? error.message : "Failed to follow";
@@ -72,8 +51,8 @@ export async function POST(req: NextRequest) {
 export async function DELETE(req: NextRequest) {
   try {
     const body = await req.json();
-    const follower = normalize(body?.followerEmail);
-    const following = normalize(body?.followingEmail);
+    const follower = normalizeEmail(body?.followerEmail);
+    const following = normalizeEmail(body?.followingEmail);
 
     if (!follower || !following) {
       return NextResponse.json(
@@ -82,12 +61,7 @@ export async function DELETE(req: NextRequest) {
       );
     }
 
-    await connectDB();
-    await Follows.deleteOne({
-      followerEmail: follower,
-      followingEmail: following,
-    });
-
+    await unfollowUser(follower, following);
     return NextResponse.json({ success: true });
   } catch (error) {
     const message =
@@ -102,7 +76,7 @@ export async function DELETE(req: NextRequest) {
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
-    const userEmail = normalize(searchParams.get("userEmail"));
+    const userEmail = normalizeEmail(searchParams.get("userEmail"));
 
     if (!userEmail) {
       return NextResponse.json(
@@ -111,20 +85,7 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    await connectDB();
-
-    const [followersDocs, followingDocs] = await Promise.all([
-      Follows.find({ followingEmail: userEmail })
-        .select("followerEmail -_id")
-        .lean<Array<{ followerEmail: string }>>(),
-      Follows.find({ followerEmail: userEmail })
-        .select("followingEmail -_id")
-        .lean<Array<{ followingEmail: string }>>(),
-    ]);
-
-    const followers = followersDocs.map((d) => d.followerEmail);
-    const following = followingDocs.map((d) => d.followingEmail);
-
+    const { followers, following } = await getFollowState(userEmail);
     return NextResponse.json({
       success: true,
       followers,

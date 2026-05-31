@@ -3,8 +3,9 @@
 
 export type PresenceStatus = "Online" | "Idle" | "Offline";
 
-const ONLINE_WINDOW_MS = 2 * 60 * 1000; // 2 min
-const IDLE_WINDOW_MS = 10 * 60 * 1000; // 10 min
+// Heartbeat fires every 2 min — give a 1-min buffer before flipping to Idle.
+const ONLINE_WINDOW_MS = 3 * 60 * 1000;
+const IDLE_WINDOW_MS = 10 * 60 * 1000;
 
 export function derivePresence(lastSeen?: Date | string | null): PresenceStatus {
   if (!lastSeen) return "Offline";

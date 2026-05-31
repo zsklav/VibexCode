@@ -1,36 +1,19 @@
 // GET /api/topics
 //
-// Returns the distinct tags currently used by Questions, with a count of
-// how many problems carry each tag. Replaces the old hardcoded
-// dummyQuestions categories list.
+// Distinct tags currently used by Questions with per-tag count. Reads from
+// the denormalized `topics/{tag}` collection maintained by lib/questions.ts
+// on question writes.
 //
-// Shape: [{ name: "Arrays", count: 12 }, ...]
+// Shape: [{ name: "arrays", count: 12 }, ...]
 
 import { NextResponse } from "next/server";
-import connectDB from "@/lib/mongodb";
-import Questions from "@/models/Questions";
+import { listTopics } from "@/lib/questions";
 
 export const runtime = "nodejs";
 
 export async function GET() {
   try {
-    await connectDB();
-
-    const aggregated = await Questions.aggregate<{
-      _id: string;
-      count: number;
-    }>([
-      { $unwind: { path: "$tags", preserveNullAndEmptyArrays: false } },
-      { $match: { tags: { $ne: "" } } },
-      { $group: { _id: "$tags", count: { $sum: 1 } } },
-      { $sort: { count: -1, _id: 1 } },
-    ]);
-
-    const topics = aggregated.map((row) => ({
-      name: row._id,
-      count: row.count,
-    }));
-
+    const topics = await listTopics();
     return NextResponse.json({ success: true, topics });
   } catch (error) {
     const message =

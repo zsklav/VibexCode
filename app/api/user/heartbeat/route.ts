@@ -1,19 +1,17 @@
 // POST /api/user/heartbeat
 //   Body: { email }
 //   Bumps the user's lastSeen so derivePresence() reports them as Online.
-//   Called every ~30s by the client while the page is visible.
+//   Called every ~2 min by the client while the page is visible.
 
 import { NextRequest, NextResponse } from "next/server";
-import connectDB from "@/lib/mongodb";
-import Users from "@/models/Users";
+import { bumpHeartbeat, normalizeEmail } from "@/lib/users";
 
 export const runtime = "nodejs";
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json().catch(() => ({}));
-    const email =
-      typeof body?.email === "string" ? body.email.trim().toLowerCase() : "";
+    const email = normalizeEmail(body?.email);
 
     if (!email) {
       return NextResponse.json(
@@ -22,14 +20,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    await connectDB();
-    // No-op if the user doesn't exist — we don't want a heartbeat to create
-    // records, and Mongo returns matchedCount=0 silently.
-    await Users.updateOne(
-      { email },
-      { $set: { lastSeen: new Date() } }
-    );
-
+    await bumpHeartbeat(email);
     return NextResponse.json({ success: true });
   } catch (error) {
     const message =

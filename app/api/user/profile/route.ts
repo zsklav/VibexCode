@@ -1,38 +1,25 @@
 // GET   /api/user/profile?email=foo@bar.com  — fetch the editable profile + meta
-// PATCH /api/user/profile                    — update bio/location/website/phone/username
-//   body: { email, bio?, location?, website?, phone?, username? }
+// PATCH /api/user/profile                    — update bio/location/website/phone/username/preferences
+//   body: { email, bio?, location?, website?, phone?, username?, preferences? }
 //
 // SECURITY: email is client-supplied (no server-verified auth token yet).
 // Same trust model as the rest of the app — see lib/auth.ts.
 
 import { NextRequest, NextResponse } from "next/server";
-import connectDB from "@/lib/mongodb";
-import Users from "@/models/Users";
+import {
+  getUser,
+  normalizeEmail,
+  updateUserProfile,
+  UsernameTakenError,
+  FieldTooLongError,
+} from "@/lib/users";
 
 export const runtime = "nodejs";
-
-function normalize(email: unknown): string | null {
-  if (typeof email !== "string") return null;
-  const v = email.trim().toLowerCase();
-  return v.length > 0 ? v : null;
-}
-
-// Whitelist of fields PATCH is allowed to touch. Anything else is dropped.
-const EDITABLE_FIELDS = ["bio", "location", "website", "phone", "username"] as const;
-type EditableField = (typeof EDITABLE_FIELDS)[number];
-
-const MAX_LENGTHS: Record<EditableField, number> = {
-  bio: 280,
-  location: 100,
-  website: 200,
-  phone: 30,
-  username: 50,
-};
 
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
-    const email = normalize(searchParams.get("email"));
+    const email = normalizeEmail(searchParams.get("email"));
 
     if (!email) {
       return NextResponse.json(
@@ -41,34 +28,7 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    await connectDB();
-    const user = await Users.findOne({ email })
-      .select(
-        "email username name bio location website phone status stats preferences createdAt"
-      )
-      .lean<{
-        email: string;
-        username?: string;
-        name?: string;
-        bio?: string;
-        location?: string;
-        website?: string;
-        phone?: string;
-        status?: string;
-        stats?: {
-          totalSolved?: number;
-          currentStreak?: number;
-          longestStreak?: number;
-        };
-        preferences?: {
-          defaultLanguage?: string;
-          theme?: string;
-          soundEnabled?: boolean;
-          showDifficulty?: boolean;
-        };
-        createdAt?: Date;
-      }>();
-
+    const user = await getUser(email);
     if (!user) {
       return NextResponse.json(
         { success: false, error: "User not found" },
@@ -97,7 +57,9 @@ export async function GET(req: NextRequest) {
           soundEnabled: user.preferences?.soundEnabled ?? true,
           showDifficulty: user.preferences?.showDifficulty ?? true,
         },
-        createdAt: user.createdAt || null,
+        createdAt: user.createdAt
+          ? (user.createdAt as { toDate?: () => Date }).toDate?.() || null
+          : null,
       },
     });
   } catch (error) {
@@ -113,7 +75,7 @@ export async function GET(req: NextRequest) {
 export async function PATCH(req: NextRequest) {
   try {
     const body = await req.json();
-    const email = normalize(body?.email);
+    const email = normalizeEmail(body?.email);
 
     if (!email) {
       return NextResponse.json(
@@ -122,85 +84,39 @@ export async function PATCH(req: NextRequest) {
       );
     }
 
-    // Collect only whitelisted fields. Empty strings are allowed (clears value).
-    const update: Record<string, unknown> = {};
-    for (const field of EDITABLE_FIELDS) {
-      const value = body?.[field];
-      if (typeof value !== "string") continue;
-      const trimmed = value.trim();
-      if (trimmed.length > MAX_LENGTHS[field]) {
-        return NextResponse.json(
-          {
-            success: false,
-            error: `${field} must be ${MAX_LENGTHS[field]} characters or fewer`,
-          },
-          { status: 400 }
-        );
-      }
-      update[field] = trimmed;
-    }
-
-    // Preferences sub-object — each key validated individually so a bad
-    // value in one field doesn't reject the whole patch.
-    if (body?.preferences && typeof body.preferences === "object") {
-      const p = body.preferences as Record<string, unknown>;
-      if (
-        typeof p.defaultLanguage === "string" &&
-        ["Javascript", "Python", "Java", "C++"].includes(p.defaultLanguage)
-      ) {
-        update["preferences.defaultLanguage"] = p.defaultLanguage;
-      }
-      if (
-        typeof p.theme === "string" &&
-        ["light", "dark", "auto"].includes(p.theme)
-      ) {
-        update["preferences.theme"] = p.theme;
-      }
-      if (typeof p.soundEnabled === "boolean") {
-        update["preferences.soundEnabled"] = p.soundEnabled;
-      }
-      if (typeof p.showDifficulty === "boolean") {
-        update["preferences.showDifficulty"] = p.showDifficulty;
-      }
-    }
-
-    if (Object.keys(update).length === 0) {
-      return NextResponse.json(
-        { success: false, error: "No editable fields provided" },
-        { status: 400 }
-      );
-    }
-
-    await connectDB();
-    const user = await Users.findOneAndUpdate(
-      { email },
-      { $set: update },
-      { new: true }
-    )
-      .select("email username bio location website phone")
-      .lean();
-
-    if (!user) {
-      return NextResponse.json(
-        { success: false, error: "User not found" },
-        { status: 404 }
-      );
-    }
-
-    return NextResponse.json({ success: true, profile: user });
+    const updated = await updateUserProfile(email, body || {});
+    return NextResponse.json({
+      success: true,
+      profile: {
+        email: updated.email,
+        username: updated.username,
+        bio: updated.bio || "",
+        location: updated.location || "",
+        website: updated.website || "",
+        phone: updated.phone || "",
+      },
+    });
   } catch (error) {
-    // Duplicate-username collision surfaces as a Mongo 11000 error.
-    const e = error as { code?: number; message?: string };
-    if (e?.code === 11000) {
+    if (error instanceof UsernameTakenError) {
       return NextResponse.json(
-        { success: false, error: "Username already taken" },
+        { success: false, error: error.message },
         { status: 409 }
       );
     }
-    const message = e?.message || "Failed to update profile";
-    return NextResponse.json(
-      { success: false, error: message },
-      { status: 500 }
-    );
+    if (error instanceof FieldTooLongError) {
+      return NextResponse.json(
+        { success: false, error: error.message },
+        { status: 400 }
+      );
+    }
+    const message =
+      error instanceof Error ? error.message : "Failed to update profile";
+    const status =
+      message === "No editable fields provided"
+        ? 400
+        : message === "User not found"
+        ? 404
+        : 500;
+    return NextResponse.json({ success: false, error: message }, { status });
   }
 }

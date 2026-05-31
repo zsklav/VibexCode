@@ -1,54 +1,55 @@
+// POST /api/user/mark-solved
+// Body: { userEmail, questionId, difficulty?, submittedAnswer?, language?, executionStats? }
+//
+// Server-side helper to record a solved question on the user doc. Currently
+// no UI surface calls this — /api/submit handles the live submit flow.
+// Kept for backend/admin use and parity with the prior Mongo route.
+
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
-import connectDB from "@/lib/mongodb";
-import UserModel from "@/models/Users";
+import { addSolvedQuestion, normalizeEmail } from "@/lib/users";
 
-// POST /api/user/mark-solved
-// Body: { userEmail, questionId, submittedAnswer?, language?, executionStats? }
-//
-// NOTE: previous implementation verified an Appwrite JWT and looked up the
-// user by appwriteId. We now identify via email (matches the trust model
-// used by /api/submit). See lib/auth.ts for the security caveat.
+export const runtime = "nodejs";
+
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
     const {
       userEmail,
       questionId,
+      difficulty,
       submittedAnswer,
       language,
       executionStats,
     } = body || {};
 
-    if (!userEmail || typeof userEmail !== "string") {
+    const email = normalizeEmail(userEmail);
+    if (!email) {
       return NextResponse.json({ error: "Invalid userEmail" }, { status: 400 });
     }
     if (!questionId || typeof questionId !== "string") {
       return NextResponse.json({ error: "Invalid questionId" }, { status: 400 });
     }
 
-    await connectDB();
-    const user = await UserModel.findOne({ email: userEmail.toLowerCase() });
-    if (!user) {
-      return NextResponse.json({ error: "User not found" }, { status: 404 });
-    }
-
-    // Use the schema's helper which keeps both solvedQuestions and the
-    // legacy solvedQuestionIds in sync, and updates streak/stats.
-    const added = user.addSolvedQuestion(
+    const result = await addSolvedQuestion(email, {
       questionId,
+      difficulty:
+        difficulty === "easy" || difficulty === "medium" || difficulty === "hard"
+          ? difficulty
+          : undefined,
       submittedAnswer,
       language,
-      executionStats
-    );
-    if (added) await user.save();
+      executionStats,
+    });
 
-    return NextResponse.json({ success: true, alreadySolved: !added });
+    return NextResponse.json({
+      success: true,
+      alreadySolved: result.alreadySolved,
+    });
   } catch (error) {
-    console.error("Error marking solved question:", error);
-    return NextResponse.json(
-      { error: "Internal Server Error" },
-      { status: 500 }
-    );
+    const message =
+      error instanceof Error ? error.message : "Internal Server Error";
+    const status = message === "User not found" ? 404 : 500;
+    return NextResponse.json({ error: message }, { status });
   }
 }

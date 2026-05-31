@@ -1,18 +1,25 @@
-import connectDB from "@/lib/mongodb";
-import Questions from "@/models/Questions";
-import { isAdminEmail } from "@/lib/auth";
-import { isValidObjectId } from "mongoose";
-import { NextRequest, NextResponse } from "next/server";
+// GET    /api/questions/[id]   — fetch one
+// PATCH  /api/questions/[id]   — admin-only edit
+//   Body: { userEmail, title?, description?, testcases?, solutions?, tags?, difficulty? }
+// DELETE /api/questions/[id]   — admin-only delete
+//   Body: { userEmail }
 
-// GET /api/questions/[id]
+import { NextRequest, NextResponse } from "next/server";
+import { isAdminEmail } from "@/lib/auth";
+import {
+  getQuestion,
+  updateQuestion,
+  deleteQuestion,
+} from "@/lib/questions";
+
+export const runtime = "nodejs";
+
 export async function GET(
-  req: NextRequest,
+  _req: NextRequest,
   context: { params: Promise<{ id: string }> }
 ): Promise<NextResponse> {
-  await connectDB();
   const { id } = await context.params;
-
-  if (!isValidObjectId(id)) {
+  if (!id) {
     return NextResponse.json(
       { success: false, error: "Invalid question id" },
       { status: 400 }
@@ -20,18 +27,18 @@ export async function GET(
   }
 
   try {
-    const question = await Questions.findById(id);
+    const question = await getQuestion(id);
     if (!question) {
       return NextResponse.json(
         { success: false, error: "Question not found" },
         { status: 404 }
       );
     }
-    return NextResponse.json({ success: true, question }, { status: 200 });
-  } catch (error: unknown) {
-    const errorMessage =
+    return NextResponse.json({ success: true, question });
+  } catch (error) {
+    const message =
       error instanceof Error ? error.message : "Unknown error";
-    console.error("Error fetching question:", errorMessage);
+    console.error("Error fetching question:", message);
     return NextResponse.json(
       { success: false, error: "Internal server error" },
       { status: 500 }
@@ -39,16 +46,12 @@ export async function GET(
   }
 }
 
-// PATCH /api/questions/[id]
-// Body: { userEmail, title?, description?, testcases?, solutions?, tags?, difficulty? }
-// Admin-only. Updates only the fields that are present in the body.
 export async function PATCH(
   req: NextRequest,
   context: { params: Promise<{ id: string }> }
 ): Promise<NextResponse> {
   const { id } = await context.params;
-
-  if (!isValidObjectId(id)) {
+  if (!id) {
     return NextResponse.json(
       { success: false, error: "Invalid question id" },
       { status: 400 }
@@ -63,29 +66,27 @@ export async function PATCH(
     );
   }
 
-  // Whitelist editable fields.
-  const update: Record<string, unknown> = {};
-  if (typeof body.title === "string") update.title = body.title.trim();
-  if (typeof body.description === "string")
-    update.description = body.description.trim();
-  if (typeof body.testcases === "string")
-    update.testcases = body.testcases.trim();
-  if (typeof body.solutions === "string")
-    update.solutions = body.solutions.trim();
+  const patch: {
+    title?: string;
+    description?: string;
+    testcases?: string;
+    solutions?: string;
+    tags?: string[];
+    difficulty?: "easy" | "medium" | "hard";
+  } = {};
+  if (typeof body.title === "string") patch.title = body.title;
+  if (typeof body.description === "string") patch.description = body.description;
+  if (typeof body.testcases === "string") patch.testcases = body.testcases;
+  if (typeof body.solutions === "string") patch.solutions = body.solutions;
   if (
     typeof body.difficulty === "string" &&
     ["easy", "medium", "hard"].includes(body.difficulty)
   ) {
-    update.difficulty = body.difficulty;
+    patch.difficulty = body.difficulty;
   }
-  if (Array.isArray(body.tags)) {
-    update.tags = body.tags
-      .filter((t: unknown): t is string => typeof t === "string")
-      .map((t: string) => t.trim().toLowerCase())
-      .filter((t: string) => t.length > 0);
-  }
+  if (Array.isArray(body.tags)) patch.tags = body.tags;
 
-  if (Object.keys(update).length === 0) {
+  if (Object.keys(patch).length === 0) {
     return NextResponse.json(
       { success: false, error: "No editable fields provided" },
       { status: 400 }
@@ -93,11 +94,7 @@ export async function PATCH(
   }
 
   try {
-    await connectDB();
-    const updated = await Questions.findByIdAndUpdate(id, update, {
-      new: true,
-      runValidators: true,
-    });
+    const updated = await updateQuestion(id, patch);
     if (!updated) {
       return NextResponse.json(
         { success: false, error: "Question not found" },
@@ -105,25 +102,22 @@ export async function PATCH(
       );
     }
     return NextResponse.json({ success: true, question: updated });
-  } catch (error: unknown) {
-    const errorMessage =
-      error instanceof Error ? error.message : "Unknown error";
-    console.error("Error updating question:", errorMessage);
+  } catch (error) {
+    const message =
+      error instanceof Error ? error.message : "Internal server error";
     return NextResponse.json(
-      { success: false, error: "Internal server error" },
+      { success: false, error: message },
       { status: 500 }
     );
   }
 }
 
-// DELETE /api/questions/[id]
-//   Body: { userEmail }   — admin-only
 export async function DELETE(
   req: NextRequest,
   context: { params: Promise<{ id: string }> }
 ): Promise<NextResponse> {
   const { id } = await context.params;
-  if (!isValidObjectId(id)) {
+  if (!id) {
     return NextResponse.json(
       { success: false, error: "Invalid question id" },
       { status: 400 }
@@ -139,9 +133,8 @@ export async function DELETE(
   }
 
   try {
-    await connectDB();
-    const deleted = await Questions.findByIdAndDelete(id);
-    if (!deleted) {
+    const ok = await deleteQuestion(id);
+    if (!ok) {
       return NextResponse.json(
         { success: false, error: "Question not found" },
         { status: 404 }

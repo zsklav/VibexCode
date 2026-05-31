@@ -1,25 +1,30 @@
-// File: /app/api/user-submissions/route.ts
+// GET /api/user-submissions?userEmail=foo@bar.com
+//   Returns all of the user's submissions, newest-first.
 
 import { NextRequest, NextResponse } from "next/server";
-import connectDB from "@/lib/mongodb";
-import Submissions from "@/models/Submissions";
+import { listUserSubmissions } from "@/lib/submissions";
 
 export const runtime = "nodejs";
 
 export async function GET(req: NextRequest) {
   try {
-    await connectDB();
     const { searchParams } = new URL(req.url);
     const userEmail = searchParams.get("userEmail");
     if (!userEmail) {
-      return NextResponse.json({ success: false, error: "Missing userEmail parameter" }, { status: 400 });
+      return NextResponse.json(
+        { success: false, error: "Missing userEmail parameter" },
+        { status: 400 }
+      );
     }
-
-    const submissions = await Submissions.find({ userEmail }).sort({ submittedAt: -1 }).lean();
-
-    return NextResponse.json({ success: true, submissions }, { status: 200 });
+    const submissions = await listUserSubmissions(userEmail);
+    return NextResponse.json({ success: true, submissions });
   } catch (error) {
     console.error("Submission GET error:", error);
-    return NextResponse.json({ success: false, error: "Server error" }, { status: 500 });
+    const message =
+      error instanceof Error ? error.message : "Server error";
+    return NextResponse.json(
+      { success: false, error: message },
+      { status: 500 }
+    );
   }
 }

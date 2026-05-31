@@ -1,12 +1,11 @@
+// GET /api/clan?userEmail=foo@bar.com
+//   Returns the user's clan (with member count), or 404 if not in one.
+
 import { NextRequest, NextResponse } from "next/server";
-import connectDB from "@/lib/mongodb";
-import Clans from "@/models/Clans";
-import ClanMembers from "@/models/ClanMembers";
+import { getUserClan } from "@/lib/clans";
 
 export const runtime = "nodejs";
 
-// GET the current user's clan, by email.
-// Replaces the previous Appwrite-backed implementation.
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
@@ -19,46 +18,14 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    await connectDB();
-
-    const email = userEmail.toLowerCase();
-    const membership = await ClanMembers.findOne({ email }).lean<{
-      _id: unknown;
-      clanId: unknown;
-    } | null>();
-    if (!membership) {
-      return NextResponse.json(
-        { message: "User not in a clan" },
-        { status: 404 }
-      );
-    }
-
-    const clan = await Clans.findById(membership.clanId).lean<{
-      _id: { toString: () => string };
-      name: string;
-      tag: string;
-      ownerEmail: string;
-    } | null>();
+    const clan = await getUserClan(userEmail);
     if (!clan) {
-      // Stale pointer to a deleted clan — clean up.
-      await ClanMembers.deleteOne({ _id: membership._id });
       return NextResponse.json(
         { message: "User not in a clan" },
         { status: 404 }
       );
     }
-
-    const memberCount = await ClanMembers.countDocuments({
-      clanId: clan._id,
-    });
-
-    return NextResponse.json({
-      $id: clan._id.toString(),
-      name: clan.name,
-      tag: clan.tag,
-      memberCount,
-      ownerEmail: clan.ownerEmail,
-    });
+    return NextResponse.json(clan);
   } catch (error) {
     const errMessage =
       error instanceof Error ? error.message : "Unknown server error";

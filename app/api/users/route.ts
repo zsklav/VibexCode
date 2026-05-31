@@ -1,20 +1,20 @@
-// app/api/users/route.ts
+// GET /api/users  — list emails + usernames for the user-search widget.
+
 import { NextResponse } from "next/server";
-import connectDB from "@/lib/mongodb";
-import Users from "@/models/Users";
+import { listUsers } from "@/lib/users";
+
+export const runtime = "nodejs";
 
 export async function GET() {
   try {
-    await connectDB();
-
-    const users = await Users.find({}, "email username").lean(); // `name`, `status`, `activity` are not in schema
-
-    return new NextResponse(JSON.stringify({ users }), {
-      status: 200,
-      headers: { "Content-Type": "application/json" },
+    const users = await listUsers(500);
+    return NextResponse.json({
+      users: users.map((u) => ({ email: u.email, username: u.username })),
     });
   } catch (error) {
     console.error("Error fetching users:", error);
-    return NextResponse.json({ error: "Server error" }, { status: 500 });
+    const message =
+      error instanceof Error ? error.message : "Server error";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

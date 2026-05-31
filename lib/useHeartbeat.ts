@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 
-const HEARTBEAT_INTERVAL_MS = 30 * 1000; // 30 s
+const HEARTBEAT_INTERVAL_MS = 2 * 60 * 1000; // 2 min — Firestore writes are billable
 
 // Pings /api/user/heartbeat while the tab is visible so server-side
 // derivePresence() can report this user as Online. Pauses on hidden tabs

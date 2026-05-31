@@ -1,11 +1,9 @@
-// DELETE /api/quizzes/[id]
-//   Body: { userEmail }   — admin-only
+// DELETE /api/quizzes/[id]   — admin-only
+//   Body: { userEmail }
 
 import { NextRequest, NextResponse } from "next/server";
-import { isValidObjectId } from "mongoose";
-import connectDB from "@/lib/mongodb";
-import Quizzes from "@/models/Quizzes";
 import { isAdminEmail } from "@/lib/auth";
+import { deleteQuiz } from "@/lib/quizzes";
 
 export const runtime = "nodejs";
 
@@ -15,7 +13,7 @@ export async function DELETE(
 ) {
   try {
     const { id } = await context.params;
-    if (!isValidObjectId(id)) {
+    if (!id) {
       return NextResponse.json(
         { success: false, error: "Invalid quiz id" },
         { status: 400 }
@@ -30,9 +28,8 @@ export async function DELETE(
       );
     }
 
-    await connectDB();
-    const result = await Quizzes.findByIdAndDelete(id);
-    if (!result) {
+    const ok = await deleteQuiz(id);
+    if (!ok) {
       return NextResponse.json(
         { success: false, error: "Quiz not found" },
         { status: 404 }

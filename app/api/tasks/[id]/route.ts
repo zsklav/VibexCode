@@ -1,84 +1,69 @@
-import { NextRequest, NextResponse } from "next/server";
-import connectDB from "@/lib/mongodb";
-import Task from "@/models/Tasks";
-import { Types } from "mongoose";
+// PATCH  /api/tasks/[id]  — update task completion. Body: { completed, userId }
+// DELETE /api/tasks/[id]  — delete task. Body: { userId }
+//
+// Ownership: only the task's userId can mutate it.
 
-// PATCH
+import { NextRequest, NextResponse } from "next/server";
+import { updateTask, deleteTask } from "@/lib/tasks";
+
+export const runtime = "nodejs";
+
 export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  await connectDB();
-
   const { id } = await params;
   const { completed, userId } = await req.json();
 
   if (!userId) {
     return NextResponse.json({ message: "Missing userId" }, { status: 400 });
   }
-
-  if (!Types.ObjectId.isValid(id)) {
+  if (!id) {
     return NextResponse.json({ message: "Invalid ID" }, { status: 400 });
   }
 
   try {
-    const updatedTask = await Task.findOneAndUpdate(
-      { _id: id, userId },
-      { completed },
-      { new: true }
-    );
-
-    if (!updatedTask) {
+    const updated = await updateTask(id, userId, { completed });
+    if (!updated) {
       return NextResponse.json(
         { message: "Task not found or not yours" },
         { status: 404 }
       );
     }
-
-    return NextResponse.json({ success: true, task: updatedTask });
+    return NextResponse.json({ success: true, task: updated });
   } catch (error) {
-    const err = error as Error;
-    return NextResponse.json(
-      { message: "Failed to update task", error: err.message },
-      { status: 500 }
-    );
+    const message =
+      error instanceof Error ? error.message : "Failed to update task";
+    return NextResponse.json({ message, error: message }, { status: 500 });
   }
 }
 
-// DELETE
 export async function DELETE(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  await connectDB();
-
   const { id } = await params;
   const { userId } = await req.json();
 
   if (!userId) {
     return NextResponse.json({ message: "Missing userId" }, { status: 400 });
   }
-
-  if (!Types.ObjectId.isValid(id)) {
+  if (!id) {
     return NextResponse.json({ message: "Invalid ID" }, { status: 400 });
   }
 
   try {
-    const deletedTask = await Task.findOneAndDelete({ _id: id, userId });
-
-    if (!deletedTask) {
+    const ok = await deleteTask(id, userId);
+    if (!ok) {
       return NextResponse.json(
         { message: "Task not found or not yours" },
         { status: 404 }
       );
     }
-
     return NextResponse.json({ success: true });
   } catch (error) {
-    const err = error as Error;
-    return NextResponse.json(
-      { message: "Failed to delete task", error: err.message },
-      { status: 500 }
-    );
+    const message =
+      error instanceof Error ? error.message : "Failed to delete task";
+    return NextResponse.json({ message, error: message }, { status: 500 });
   }
 }

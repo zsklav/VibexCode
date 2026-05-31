@@ -5,21 +5,14 @@
 // wrote to, so the page always 404'd. Now sources data from Questions
 // directly — the same collection /problems and /playground use.
 
-import connectDB from "@/lib/mongodb";
 import { notFound } from "next/navigation";
-import Questions from "@/models/Questions";
+import { findQuestionsByTag } from "@/lib/questions";
 
 interface TopicPageProps {
   params: Promise<{
     topicName: string;
   }>;
 }
-
-type LeanQuestion = {
-  _id: { toString: () => string };
-  title?: string;
-  difficulty?: "easy" | "medium" | "hard";
-};
 
 const DIFFICULTY_COLORS: Record<string, string> = {
   easy: "bg-green-600/80",
@@ -31,15 +24,9 @@ export default async function TopicPage({ params }: TopicPageProps) {
   const { topicName: raw } = await params;
   const topicName = decodeURIComponent(raw);
 
-  await connectDB();
-
-  // Case-insensitive tag match so "arrays" and "Arrays" both work.
-  const escaped = topicName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  const questions = await Questions.find({
-    tags: { $regex: new RegExp(`^${escaped}$`, "i") },
-  })
-    .select("_id title difficulty")
-    .lean<LeanQuestion[]>();
+  // Tag query is case-insensitive — lib/questions.ts lowercases on write
+  // and matches against the normalized tagsLower array.
+  const questions = await findQuestionsByTag(topicName);
 
   if (questions.length === 0) return notFound();
 
@@ -54,8 +41,8 @@ export default async function TopicPage({ params }: TopicPageProps) {
         <div className="space-y-2">
           {questions.map((q, i) => (
             <a
-              key={q._id.toString()}
-              href={`/playground?id=${q._id.toString()}`}
+              key={q._id}
+              href={`/playground?id=${q._id}`}
               className="flex items-center justify-between p-4 bg-gradient-to-r from-purple-500 via-blue-500 to-indigo-500 rounded-xl shadow hover:opacity-90 transition"
             >
               <span className="text-white text-sm">

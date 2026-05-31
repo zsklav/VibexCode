@@ -1,12 +1,10 @@
 import { Server as IOServer } from "socket.io";
 import { Server as HTTPServer } from "http";
 import type { NextApiRequest } from "next";
-import type { NextApiResponseServerIO } from "../../types/next"; // your extended type
+import type { NextApiResponseServerIO } from "../../types/next";
 import { v4 as uuidv4 } from "uuid";
-import connectDB from "../../lib/mongodb";
-import Users from "../../models/Users";
+import { adminDb } from "../../lib/firebase-admin";
 import { detectAbuse } from "../../lib/moderation";
-import { isValidObjectId } from "mongoose";
 
 export const config = {
   api: {
@@ -64,24 +62,24 @@ export default function handler(
         }
 
         try {
-          await connectDB();
-          const userLookup: Array<Record<string, string>> = [
-            { firebaseUid: senderId },
-            { appwriteId: senderId },
-          ];
-          if (isValidObjectId(senderId)) {
-            userLookup.push({ _id: senderId });
-          }
+          // Look up user by Firebase UID to check ban status. Note: REST POST
+          // is the authoritative write path with full warning/ban accounting
+          // — this socket check just drops messages from already-banned users
+          // so other connected clients don't see them.
+          const db = adminDb();
+          const snap = await db
+            .collection("users")
+            .where("firebaseUid", "==", senderId)
+            .limit(1)
+            .get();
 
-          const user = await Users.findOne({ $or: userLookup }).select(
-            "moderation"
-          );
-
-          if (!user) return;
-
-          const now = new Date();
-          const bannedUntil = user.moderation?.chatBannedUntil;
-          if (bannedUntil && bannedUntil > now) return;
+          if (snap.empty) return;
+          const user = snap.docs[0].data();
+          const bannedUntilRaw = user.moderation?.chatBannedUntil;
+          const bannedUntil = bannedUntilRaw?.toDate
+            ? bannedUntilRaw.toDate()
+            : null;
+          if (bannedUntil && bannedUntil > new Date()) return;
 
           const abuse = detectAbuse(body);
           if (abuse.hit) return;

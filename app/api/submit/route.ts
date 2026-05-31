@@ -1,31 +1,15 @@
-// File: /app/api/submit/route.ts
+// POST /api/submit
+//   Body: { userEmail, userName, questionId, questionTitle, answerMarkdown,
+//           submittedAt?, passed?, code?, language?, difficulty?,
+//           runtimeMs?, memoryKb? }
+//
+// Writes a submissions doc and (if passed) bumps the denormalized
+// leaderboard/{email} doc that Leaderboards / Lead read from.
 
 import { NextRequest, NextResponse } from "next/server";
-import connectDB from "@/lib/mongodb";
-import Submissions from "@/models/Submissions";
+import { createSubmission } from "@/lib/submissions";
 
 export const runtime = "nodejs";
-
-const POINTS_BY_DIFFICULTY: Record<"easy" | "medium" | "hard", number> = {
-  easy: 10,
-  medium: 20,
-  hard: 35,
-};
-
-function pointsFor(
-  difficulty: string | undefined,
-  passed: boolean | undefined
-): number {
-  if (!passed) return 0;
-  if (
-    difficulty === "easy" ||
-    difficulty === "medium" ||
-    difficulty === "hard"
-  ) {
-    return POINTS_BY_DIFFICULTY[difficulty];
-  }
-  return POINTS_BY_DIFFICULTY.easy;
-}
 
 export async function POST(req: NextRequest) {
   try {
@@ -37,7 +21,6 @@ export async function POST(req: NextRequest) {
       questionTitle,
       answerMarkdown,
       submittedAt,
-      // New scoring fields (all optional for back-compat).
       passed,
       code,
       language,
@@ -57,40 +40,31 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    await connectDB();
-
-    const points = pointsFor(difficulty, passed);
-
-    const newSubmission = await Submissions.create({
+    const { submission, points } = await createSubmission({
       userEmail,
       userName,
       questionId,
       questionTitle,
       answerMarkdown,
-      submittedAt: submittedAt ? new Date(submittedAt) : new Date(),
-      passed: Boolean(passed),
+      submittedAt,
+      passed,
       code,
       language,
       difficulty,
-      runtimeMs:
-        typeof runtimeMs === "number" && Number.isFinite(runtimeMs)
-          ? runtimeMs
-          : undefined,
-      memoryKb:
-        typeof memoryKb === "number" && Number.isFinite(memoryKb)
-          ? memoryKb
-          : undefined,
-      points,
+      runtimeMs,
+      memoryKb,
     });
 
     return NextResponse.json(
-      { success: true, submission: newSubmission, points },
+      { success: true, submission, points },
       { status: 201 }
     );
   } catch (error) {
     console.error("Submission POST error:", error);
+    const message =
+      error instanceof Error ? error.message : "Server error";
     return NextResponse.json(
-      { success: false, error: "Server error" },
+      { success: false, error: message },
       { status: 500 }
     );
   }
