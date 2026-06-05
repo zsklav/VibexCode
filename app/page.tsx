@@ -205,18 +205,20 @@ export default function Home() {
   const primaryLabel = loggedIn ? "Continue Coding" : "Start Free";
 
   return (
-    <div className="relative min-h-screen overflow-x-hidden bg-[#05070d]">
+    <div className="relative min-h-screen overflow-x-hidden bg-[linear-gradient(145deg,#070a13_0%,#090c16_45%,#05070d_100%)]">
+      {/* Ambient background, lifted out of the hero card so it fills the whole page */}
+      <div className="pointer-events-none fixed inset-0 -z-10 bg-[radial-gradient(circle_at_18%_18%,rgba(0,229,255,0.18),transparent_28%),radial-gradient(circle_at_78%_20%,rgba(139,92,246,0.2),transparent_30%),radial-gradient(circle_at_50%_100%,rgba(16,185,129,0.11),transparent_34%)]" />
+      <div className="pointer-events-none fixed inset-0 -z-10 bg-[linear-gradient(rgba(255,255,255,0.025)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.025)_1px,transparent_1px)] bg-[size:72px_72px] opacity-35" />
+
       <Navbar />
 
-      <main className="relative mx-auto max-w-[1440px] px-4 pb-16 pt-24 sm:px-6 lg:px-8">
-        <section className="relative min-h-[calc(100svh-7rem)] overflow-hidden rounded-[2rem] border border-white/10 bg-[linear-gradient(145deg,#070a13_0%,#090c16_45%,#05070d_100%)] shadow-[0_30px_140px_rgba(0,0,0,0.45)]">
-          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_18%_18%,rgba(0,229,255,0.18),transparent_28%),radial-gradient(circle_at_78%_20%,rgba(139,92,246,0.2),transparent_30%),radial-gradient(circle_at_50%_100%,rgba(16,185,129,0.11),transparent_34%)]" />
-          <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.025)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.025)_1px,transparent_1px)] bg-[size:72px_72px] opacity-35" />
+      <main className="relative z-10 w-full px-6 pb-16 pt-24 sm:px-8 lg:px-14">
+        <section className="relative min-h-[calc(100svh-7rem)] overflow-hidden">
           {orbitItems.map((item) => (
             <OrbitChip key={`${item.label}-${item.className}`} item={item} />
           ))}
 
-          <div className="relative z-10 grid min-h-[calc(100svh-7rem)] items-center gap-10 p-6 sm:p-8 lg:grid-cols-[0.86fr_1.14fr] lg:p-14">
+          <div className="relative z-10 grid min-h-[calc(100svh-7rem)] items-center gap-10 py-6 sm:py-8 lg:grid-cols-[0.86fr_1.14fr] lg:py-14">
             <div className="max-w-3xl">
               <motion.div
                 initial={{ opacity: 0, y: 18 }}
