@@ -21,7 +21,7 @@ export default function SubmitQuestionPage() {
 
   if (!userIsAdmin) {
     return (
-      <div className="min-h-screen dark:bg-[#020612] text-gray-900 dark:text-white">
+      <div className="min-h-screen text-gray-900 dark:text-white">
         <Navbar />
         <main className="max-w-2xl mx-auto px-4 py-20 text-center">
           <div className="text-6xl mb-4">🔒</div>
@@ -236,7 +236,7 @@ function SubmitQuestionForm({ userEmail }: { userEmail: string }) {
   return (
     <>
       <Navbar />
-      <div className="min-h-screen px-6 py-10 dark:bg-[#020612] text-gray-900 dark:text-gray-200 transition-colors duration-300">
+      <div className="min-h-screen px-6 py-10 text-gray-900 dark:text-gray-200 transition-colors duration-300">
         <div className="max-w-3xl mx-auto bg-white dark:bg-[#1a1a1d] shadow-xl rounded-xl p-8 border border-gray-200 dark:border-gray-700 transition">
           <h1 className="text-3xl font-bold mb-2 text-center">
             📝 Submit a New Question

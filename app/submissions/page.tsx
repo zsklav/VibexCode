@@ -68,7 +68,7 @@ const SubmissionsPage = () => {
 
   if (!isLoggedIn) {
     return (
-      <div className="min-h-screen dark:bg-[#020612] text-gray-900 dark:text-white">
+      <div className="min-h-screen text-gray-900 dark:text-white">
         <Navbar />
         <main className="max-w-2xl mx-auto px-4 py-16 text-center">
           <p className="text-6xl mb-4">🔒</p>
@@ -82,7 +82,7 @@ const SubmissionsPage = () => {
   }
 
   return (
-    <div className="min-h-screen dark:bg-[#020612] text-gray-900 dark:text-white">
+    <div className="min-h-screen text-gray-900 dark:text-white">
       <Navbar />
       <main className="max-w-4xl mx-auto px-4 py-10">
         <div className="mb-6">

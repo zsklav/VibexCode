@@ -332,7 +332,7 @@ function PlaygroundContent() {
   };
 
   return (
-    <div className="h-screen flex flex-col dark:bg-[#020612] text-gray-900 dark:text-white">
+    <div className="h-screen flex flex-col text-gray-900 dark:text-white">
       <Navbar />
       <div className="flex flex-1 p-3 gap-3 overflow-hidden flex-col lg:flex-row min-h-0">
         {/* Left — Question + Testcases + Notes (stacked, scrollable) */}
@@ -566,7 +566,7 @@ export default function PlaygroundPage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen flex items-center justify-center dark:bg-[#020612] text-gray-500 dark:text-gray-300">
+        <div className="min-h-screen flex items-center justify-center text-gray-500 dark:text-gray-300">
           Loading playground...
         </div>
       }

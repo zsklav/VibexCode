@@ -5,11 +5,12 @@ import { FaSun } from "react-icons/fa";
 import { FaMoon } from "react-icons/fa6";
 
 export default function ThemeToggle() {
-  const [darkMode, setDarkMode] = useState(false);
+  const [darkMode, setDarkMode] = useState(true);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
-      const isDark = localStorage.getItem("theme") === "dark";
+      // Dark is the default — only go light if the user explicitly chose it.
+      const isDark = localStorage.getItem("theme") !== "light";
       setDarkMode(isDark);
       document.documentElement.classList.toggle("dark", isDark);
     }

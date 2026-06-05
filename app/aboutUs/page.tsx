@@ -99,7 +99,7 @@ export default function AboutUs() {
     <div className="min-h-screen overflow-auto">
       <Navbar />
 
-      <main className="min-h-screen w-full text-black dark:text-white dark:bg-[#020612] px-8 md:px-24 pb-12 relative overflow-visible pt-8">
+      <main className="min-h-screen w-full text-black dark:text-white px-8 md:px-24 pb-12 relative overflow-visible pt-8">
         {/* Heading */}
         <motion.div
           className="text-center mt-8 z-20 relative"

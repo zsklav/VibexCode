@@ -121,7 +121,7 @@ const LeaderboardsPage = () => {
   const medals = ["🥇", "🥈", "🥉"];
 
   return (
-    <div className="min-h-screen dark:bg-[#020612] text-gray-900 dark:text-white">
+    <div className="min-h-screen text-gray-900 dark:text-white">
       <Navbar />
       <main className="max-w-3xl mx-auto px-4 py-10">
         <div className="mb-8">

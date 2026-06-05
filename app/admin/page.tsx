@@ -59,7 +59,7 @@ const AdminHome = () => {
 
   if (!isAdmin) {
     return (
-      <div className="min-h-screen dark:bg-[#020612] text-gray-900 dark:text-white">
+      <div className="min-h-screen text-gray-900 dark:text-white">
         <Navbar />
         <main className="max-w-2xl mx-auto px-4 py-16 text-center">
           <p className="text-6xl mb-4">🔒</p>
@@ -73,7 +73,7 @@ const AdminHome = () => {
   }
 
   return (
-    <div className="min-h-screen dark:bg-[#020612] text-gray-900 dark:text-white">
+    <div className="min-h-screen text-gray-900 dark:text-white">
       <Navbar />
       <main className="max-w-5xl mx-auto px-4 py-10">
         <div className="flex items-center gap-3 mb-8">

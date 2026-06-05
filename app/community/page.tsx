@@ -143,7 +143,7 @@ export default function CommunityPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen dark:bg-[#020612] text-gray-900 dark:text-white">
+      <div className="min-h-screen text-gray-900 dark:text-white">
         <Navbar />
         <main className="flex items-center justify-center py-32">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-500" />
@@ -154,7 +154,7 @@ export default function CommunityPage() {
 
   if (!user) {
     return (
-      <div className="min-h-screen dark:bg-[#020612] text-gray-900 dark:text-white">
+      <div className="min-h-screen text-gray-900 dark:text-white">
         <Navbar />
         <main className="max-w-2xl mx-auto px-4 py-16 text-center">
           <p className="text-6xl mb-4">🔒</p>
@@ -209,7 +209,7 @@ export default function CommunityPage() {
   );
 
   return (
-    <div className="h-screen flex flex-col dark:bg-[#020612] text-gray-900 dark:text-white">
+    <div className="h-screen flex flex-col text-gray-900 dark:text-white">
       <Navbar />
 
       <div className="flex flex-1 overflow-hidden">

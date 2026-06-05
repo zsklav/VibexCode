@@ -49,7 +49,7 @@ export default async function TopicPage({ params }: TopicPageProps) {
   if (questions.length === 0) return notFound();
 
   return (
-    <div className="min-h-screen p-6 dark:bg-[#020612] text-gray-900 dark:text-white">
+    <div className="min-h-screen p-6 text-gray-900 dark:text-white">
       <div className="max-w-3xl mx-auto">
         <h1 className="text-3xl font-bold mb-2 capitalize">{topicName}</h1>
         <p className="mb-6 text-gray-600 dark:text-gray-400">

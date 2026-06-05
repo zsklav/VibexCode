@@ -64,7 +64,7 @@ function ResetPasswordContent() {
   return (
     <>
       <Navbar />
-      <div className="relative min-h-screen flex items-center justify-center px-4 py-6 sm:py-10 dark:bg-[#020612] transition-all duration-300">
+      <div className="relative min-h-screen flex items-center justify-center px-4 py-6 sm:py-10 transition-all duration-300">
         <div className="relative z-10 w-full max-w-sm sm:max-w-md min-h-[480px] bg-white dark:bg-zinc-900 rounded-3xl shadow-2xl overflow-hidden">
           <div className="p-6 sm:p-8 text-zinc-800 dark:text-white flex flex-col justify-between min-h-[480px]">
             <div className="text-center mb-6 sm:mb-8">
@@ -143,7 +143,7 @@ export default function ResetPasswordPage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen flex items-center justify-center dark:bg-[#020612] text-gray-500 dark:text-gray-300">
+        <div className="min-h-screen flex items-center justify-center text-gray-500 dark:text-gray-300">
           Loading...
         </div>
       }

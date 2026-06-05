@@ -36,7 +36,7 @@ export default function FAQPage() {
   return (
     <>
       <Navbar />
-      <main className="min-h-screen dark:bg-[#020612] text-gray-800 dark:text-gray-100 px-4 py-16">
+      <main className="min-h-screen text-gray-800 dark:text-gray-100 px-4 py-16">
         <div className="max-w-3xl mx-auto">
           <h1 className="text-5xl font-bold text-center mb-12">FAQs</h1>
           <div className="space-y-6">
