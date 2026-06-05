@@ -1,296 +1,250 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, type MutableRefObject } from "react";
-import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { Float, RoundedBox, Text } from "@react-three/drei";
-import { Bloom, DepthOfField, EffectComposer, Vignette } from "@react-three/postprocessing";
+import { useEffect, useRef } from "react";
 import * as THREE from "three";
 
-const symbols = ["< />", "{ }", "=>", "npm", "git", "API"];
-
-function AuroraField({ scroll }: { scroll: MutableRefObject<number> }) {
-  const material = useRef<THREE.ShaderMaterial | null>(null);
-
-  useFrame(({ clock, pointer }) => {
-    if (!material.current) return;
-    material.current.uniforms.uTime.value = clock.elapsedTime;
-    material.current.uniforms.uPointer.value.set(pointer.x, pointer.y);
-    material.current.uniforms.uScroll.value = scroll.current;
-  });
-
-  return (
-    <mesh position={[0, 0, -8]} scale={[18, 10, 1]}>
-      <planeGeometry args={[1, 1, 96, 96]} />
-      <shaderMaterial
-        ref={material}
-        transparent
-        depthWrite={false}
-        blending={THREE.AdditiveBlending}
-        uniforms={{
-          uTime: { value: 0 },
-          uPointer: { value: new THREE.Vector2() },
-          uScroll: { value: 0 },
-        }}
-        vertexShader={`
-          varying vec2 vUv;
-          uniform float uTime;
-          uniform vec2 uPointer;
-          uniform float uScroll;
-
-          void main() {
-            vUv = uv;
-            vec3 p = position;
-            float wave = sin((uv.x * 5.8) + uTime * .5 + uScroll * 1.4) * .24;
-            wave += sin((uv.y * 7.5) - uTime * .34) * .14;
-            p.z += wave + uPointer.x * .08;
-            p.y += sin(uv.x * 8.0 + uTime * .22) * .08;
-            gl_Position = projectionMatrix * modelViewMatrix * vec4(p, 1.0);
-          }
-        `}
-        fragmentShader={`
-          varying vec2 vUv;
-          uniform float uTime;
-          uniform float uScroll;
-
-          float band(float y, float center, float width) {
-            return smoothstep(width, 0.0, abs(y - center));
-          }
-
-          void main() {
-            float flow = sin(vUv.x * 7.0 + uTime * .34 + uScroll * 1.8) * .07;
-            float glow = band(vUv.y + flow, .45, .22) + band(vUv.y - flow, .62, .16);
-            vec3 purple = vec3(.52, .17, 1.0);
-            vec3 blue = vec3(.05, .38, 1.0);
-            vec3 cyan = vec3(.0, .94, 1.0);
-            vec3 color = mix(purple, blue, vUv.x);
-            color = mix(color, cyan, smoothstep(.45, .95, sin(uTime * .18 + vUv.x * 2.5) * .5 + .5));
-            float edgeFade = smoothstep(0.0, .22, vUv.x) * smoothstep(1.0, .78, vUv.x);
-            float alpha = glow * edgeFade * .34;
-            gl_FragColor = vec4(color * (1.0 + glow), alpha);
-          }
-        `}
-      />
-    </mesh>
-  );
-}
-
-function ParticleCloud({ scroll }: { scroll: MutableRefObject<number> }) {
-  const points = useRef<THREE.Points | null>(null);
-  const count = 2600;
-  const positions = useMemo(() => {
-    const data = new Float32Array(count * 3);
-    for (let i = 0; i < count; i += 1) {
-      data[i * 3] = (Math.random() - 0.5) * 18;
-      data[i * 3 + 1] = (Math.random() - 0.5) * 9;
-      data[i * 3 + 2] = (Math.random() - 0.5) * 13;
-    }
-    return data;
-  }, []);
-
-  useFrame(({ clock, pointer }) => {
-    if (!points.current) return;
-    points.current.rotation.y = clock.elapsedTime * 0.018 + pointer.x * 0.035;
-    points.current.rotation.x = pointer.y * -0.028;
-    points.current.position.z = scroll.current * 0.9;
-  });
-
-  return (
-    <points ref={points}>
-      <bufferGeometry>
-        <bufferAttribute attach="attributes-position" args={[positions, 3]} />
-      </bufferGeometry>
-      <pointsMaterial
-        size={0.025}
-        color="#77f7ff"
-        transparent
-        opacity={0.72}
-        depthWrite={false}
-        blending={THREE.AdditiveBlending}
-      />
-    </points>
-  );
-}
-
-function GlassHeadphones({ scroll }: { scroll: MutableRefObject<number> }) {
-  const group = useRef<THREE.Group | null>(null);
-  const glass = useMemo(
-    () =>
-      new THREE.MeshPhysicalMaterial({
-        color: "#dff8ff",
-        roughness: 0.08,
-        metalness: 0.05,
-        transmission: 0.55,
-        thickness: 1.2,
-        transparent: true,
-        opacity: 0.32,
-        ior: 1.45,
-        clearcoat: 1,
-        clearcoatRoughness: 0.08,
-      }),
-    []
-  );
-  const rim = useMemo(
-    () =>
-      new THREE.MeshStandardMaterial({
-        color: "#8cf8ff",
-        emissive: "#29d9ff",
-        emissiveIntensity: 0.7,
-        roughness: 0.28,
-        metalness: 0.45,
-        transparent: true,
-        opacity: 0.78,
-      }),
-    []
-  );
-
-  useFrame(({ clock, pointer }) => {
-    if (!group.current) return;
-    group.current.rotation.y = Math.sin(clock.elapsedTime * 0.28) * 0.18 + pointer.x * 0.18;
-    group.current.rotation.x = -0.12 + pointer.y * -0.1;
-    group.current.rotation.z = Math.sin(clock.elapsedTime * 0.18) * 0.035;
-    group.current.position.y = Math.sin(clock.elapsedTime * 0.55) * 0.09;
-    group.current.position.z = scroll.current * 0.38;
-  });
-
-  return (
-    <Float speed={1.15} rotationIntensity={0.16} floatIntensity={0.24}>
-      <group ref={group} position={[1.85, -0.05, -0.7]} scale={1.55}>
-        <mesh material={glass} rotation={[0, 0, Math.PI / 2]} position={[0, 0.2, 0]}>
-          <torusGeometry args={[1.42, 0.085, 24, 128, Math.PI]} />
-        </mesh>
-        <mesh material={rim} rotation={[0, 0, Math.PI / 2]} position={[0, 0.2, 0.01]}>
-          <torusGeometry args={[1.45, 0.012, 12, 128, Math.PI]} />
-        </mesh>
-        {[-1, 1].map((side) => (
-          <group key={side} position={[side * 1.35, -0.48, 0]} rotation={[0, 0, side * 0.07]}>
-            <RoundedBox args={[0.62, 1.05, 0.54]} radius={0.18} smoothness={8} material={glass} />
-            <mesh material={rim} position={[0, 0, 0.29]}>
-              <torusGeometry args={[0.31, 0.018, 10, 52]} />
-            </mesh>
-            <mesh material={glass} position={[0, 0, 0.33]}>
-              <cylinderGeometry args={[0.24, 0.3, 0.08, 52]} />
-            </mesh>
-          </group>
-        ))}
-        <mesh material={glass} position={[0, -0.24, 0]}>
-          <capsuleGeometry args={[0.08, 1.9, 8, 24]} />
-        </mesh>
-      </group>
-    </Float>
-  );
-}
-
-function CodeSymbols({ scroll }: { scroll: MutableRefObject<number> }) {
-  const items = useMemo(
-    () =>
-      Array.from({ length: 34 }, (_, index) => ({
-        label: symbols[index % symbols.length],
-        x: (Math.random() - 0.5) * 14,
-        y: (Math.random() - 0.5) * 6.5,
-        z: -7 + Math.random() * 7,
-        size: 0.18 + Math.random() * 0.12,
-        speed: 0.16 + Math.random() * 0.34,
-      })),
-    []
-  );
-
-  return (
-    <group>
-      {items.map((item, index) => (
-        <SymbolText key={`${item.label}-${index}`} item={item} index={index} scroll={scroll} />
-      ))}
-    </group>
-  );
-}
-
-function SymbolText({
-  item,
-  index,
-  scroll,
-}: {
-  item: { label: string; x: number; y: number; z: number; size: number; speed: number };
-  index: number;
-  scroll: MutableRefObject<number>;
-}) {
-  const ref = useRef<THREE.Mesh | null>(null);
-  useFrame(({ clock, pointer }) => {
-    if (!ref.current) return;
-    ref.current.position.x = item.x + Math.sin(clock.elapsedTime * item.speed + index) * 0.22 + pointer.x * 0.18;
-    ref.current.position.y = item.y + Math.cos(clock.elapsedTime * item.speed + index) * 0.14 + pointer.y * 0.12;
-    ref.current.position.z = item.z + scroll.current * 2.5;
-    ref.current.rotation.y = pointer.x * 0.16;
-  });
-
-  return (
-    <Text
-      ref={ref}
-      position={[item.x, item.y, item.z]}
-      fontSize={item.size}
-      color="#d9fbff"
-      anchorX="center"
-      anchorY="middle"
-      fillOpacity={0.34}
-      outlineWidth={0.002}
-      outlineColor="#69e7ff"
-    >
-      {item.label}
-    </Text>
-  );
-}
-
-function CameraRig() {
-  const { camera, pointer } = useThree();
-  useFrame(() => {
-    camera.position.x = THREE.MathUtils.lerp(camera.position.x, pointer.x * 0.35, 0.035);
-    camera.position.y = THREE.MathUtils.lerp(camera.position.y, 0.15 + pointer.y * 0.18, 0.035);
-    camera.lookAt(0, 0, -1.5);
-  });
-  return null;
-}
-
 export default function HeroWorkspace3D() {
-  const scroll = useRef(0);
-  const [ready, setReady] = useState(false);
+  const mountRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
-    setReady(true);
-    const onScroll = () => {
-      scroll.current = Math.min(window.scrollY / 900, 1.8);
+    const mount = mountRef.current;
+    if (!mount) return;
+
+    const scene = new THREE.Scene();
+    scene.fog = new THREE.Fog(0x10131f, 8, 24);
+
+    const camera = new THREE.PerspectiveCamera(42, 1, 0.1, 100);
+    camera.position.set(0, 2.4, 9.2);
+
+    const renderer = new THREE.WebGLRenderer({
+      antialias: true,
+      alpha: true,
+      preserveDrawingBuffer: false,
+      powerPreference: "high-performance",
+    });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.25));
+    renderer.setClearColor(0x000000, 0);
+    mount.appendChild(renderer.domElement);
+
+    const group = new THREE.Group();
+    scene.add(group);
+
+    const ambient = new THREE.AmbientLight(0xffffff, 1.25);
+    scene.add(ambient);
+
+    const key = new THREE.DirectionalLight(0xffffff, 2.4);
+    key.position.set(4, 8, 6);
+    scene.add(key);
+
+    const teal = new THREE.PointLight(0x2dd4bf, 3.2, 16);
+    teal.position.set(-4, 2, 5);
+    scene.add(teal);
+
+    const coral = new THREE.PointLight(0xfb7185, 2.8, 15);
+    coral.position.set(4, 1.5, 3);
+    scene.add(coral);
+
+    const yellow = new THREE.PointLight(0xfacc15, 1.6, 10);
+    yellow.position.set(0, 3.2, 1.5);
+    scene.add(yellow);
+
+    const matDesk = new THREE.MeshStandardMaterial({
+      color: 0x202638,
+      roughness: 0.62,
+      metalness: 0.14,
+    });
+    const matDark = new THREE.MeshStandardMaterial({
+      color: 0x0f172a,
+      roughness: 0.45,
+      metalness: 0.35,
+    });
+    const matScreen = new THREE.MeshStandardMaterial({
+      color: 0x07111f,
+      emissive: 0x123f4c,
+      emissiveIntensity: 0.7,
+      roughness: 0.25,
+    });
+    const matTeal = new THREE.MeshStandardMaterial({
+      color: 0x2dd4bf,
+      emissive: 0x0f766e,
+      emissiveIntensity: 1.2,
+      roughness: 0.3,
+    });
+    const matCoral = new THREE.MeshStandardMaterial({
+      color: 0xfb7185,
+      emissive: 0xbe123c,
+      emissiveIntensity: 0.75,
+      roughness: 0.34,
+    });
+    const matYellow = new THREE.MeshStandardMaterial({
+      color: 0xfacc15,
+      emissive: 0xa16207,
+      emissiveIntensity: 0.55,
+      roughness: 0.38,
+    });
+    const matGlass = new THREE.MeshPhysicalMaterial({
+      color: 0xe2e8f0,
+      transparent: true,
+      opacity: 0.18,
+      roughness: 0.18,
+      metalness: 0.05,
+      transmission: 0.2,
+    });
+
+    const desk = new THREE.Mesh(new THREE.BoxGeometry(7.8, 0.22, 3.6), matDesk);
+    desk.position.set(0, -1.25, -0.35);
+    group.add(desk);
+
+    const monitor = new THREE.Mesh(new THREE.BoxGeometry(4.3, 2.55, 0.16), matDark);
+    monitor.position.set(0, 0.42, -0.55);
+    group.add(monitor);
+
+    const screen = new THREE.Mesh(new THREE.BoxGeometry(3.9, 2.15, 0.06), matScreen);
+    screen.position.set(0, 0.42, -0.44);
+    group.add(screen);
+
+    const stand = new THREE.Mesh(new THREE.BoxGeometry(0.36, 1.1, 0.28), matDark);
+    stand.position.set(0, -0.85, -0.55);
+    group.add(stand);
+
+    const base = new THREE.Mesh(new THREE.BoxGeometry(1.65, 0.18, 0.9), matDark);
+    base.position.set(0, -1.33, -0.2);
+    group.add(base);
+
+    const laptop = new THREE.Group();
+    const laptopBase = new THREE.Mesh(new THREE.BoxGeometry(2.25, 0.12, 1.4), matDark);
+    const laptopScreen = new THREE.Mesh(new THREE.BoxGeometry(2.1, 1.25, 0.08), matScreen);
+    laptopBase.position.set(0, -0.05, 0);
+    laptopScreen.position.set(0, 0.62, -0.64);
+    laptopScreen.rotation.x = -0.24;
+    laptop.add(laptopBase, laptopScreen);
+    laptop.position.set(2.55, -1.06, 0.78);
+    laptop.rotation.y = -0.5;
+    group.add(laptop);
+
+    const lineMaterial = new THREE.LineBasicMaterial({
+      color: 0x67e8f9,
+      transparent: true,
+      opacity: 0.74,
+    });
+
+    for (let row = 0; row < 8; row += 1) {
+      const width = row % 3 === 0 ? 2.5 : row % 2 === 0 ? 1.75 : 2.15;
+      const y = 1.22 - row * 0.24;
+      const geometry = new THREE.BufferGeometry().setFromPoints([
+        new THREE.Vector3(-1.7, y, -0.38),
+        new THREE.Vector3(-1.7 + width, y, -0.38),
+      ]);
+      const line = new THREE.Line(geometry, lineMaterial);
+      group.add(line);
+    }
+
+    const chips = [
+      { x: -3.3, y: 1.6, z: -0.9, m: matTeal },
+      { x: 3.1, y: 1.35, z: -0.8, m: matCoral },
+      { x: -2.8, y: -0.05, z: 0.65, m: matYellow },
+      { x: 2.95, y: -0.22, z: -0.05, m: matGlass },
+      { x: 0.05, y: 2.15, z: -1.05, m: matGlass },
+    ];
+
+    const chipMeshes: THREE.Mesh[] = [];
+    chips.forEach((chip, index) => {
+      const mesh = new THREE.Mesh(new THREE.BoxGeometry(1.1, 0.55, 0.08), chip.m);
+      mesh.position.set(chip.x, chip.y, chip.z);
+      mesh.rotation.set(0.12 * index, -0.22 + index * 0.1, 0.08 * index);
+      chipMeshes.push(mesh);
+      group.add(mesh);
+    });
+
+    const connectorMaterial = new THREE.LineBasicMaterial({
+      color: 0xf8fafc,
+      transparent: true,
+      opacity: 0.22,
+    });
+    const connectorPoints = [
+      new THREE.Vector3(-3.3, 1.6, -0.9),
+      new THREE.Vector3(0, 0.42, -0.3),
+      new THREE.Vector3(3.1, 1.35, -0.8),
+      new THREE.Vector3(0.05, 2.15, -1.05),
+      new THREE.Vector3(-2.8, -0.05, 0.65),
+      new THREE.Vector3(2.95, -0.22, -0.05),
+    ];
+    const connectors = new THREE.Line(
+      new THREE.BufferGeometry().setFromPoints(connectorPoints),
+      connectorMaterial
+    );
+    group.add(connectors);
+
+    const grid = new THREE.GridHelper(12, 18, 0x64748b, 0x334155);
+    grid.position.y = -1.42;
+    grid.position.z = -0.3;
+    grid.material.transparent = true;
+    (grid.material as THREE.Material).opacity = 0.18;
+    group.add(grid);
+
+    const pointer = { x: 0, y: 0 };
+    const onPointerMove = (event: PointerEvent) => {
+      const rect = mount.getBoundingClientRect();
+      pointer.x = ((event.clientX - rect.left) / rect.width - 0.5) * 2;
+      pointer.y = ((event.clientY - rect.top) / rect.height - 0.5) * 2;
     };
-    onScroll();
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
+    window.addEventListener("pointermove", onPointerMove);
+
+    const resize = () => {
+      const rect = mount.getBoundingClientRect();
+      renderer.setSize(rect.width, rect.height, false);
+      camera.aspect = rect.width / Math.max(rect.height, 1);
+      camera.updateProjectionMatrix();
+    };
+    resize();
+    window.addEventListener("resize", resize);
+
+    let isVisible = true;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        isVisible = entry.isIntersecting;
+      },
+      { threshold: 0.05 }
+    );
+    observer.observe(mount);
+
+    let frame = 0;
+    let raf = 0;
+    const animate = () => {
+      if (!isVisible) {
+        raf = window.requestAnimationFrame(animate);
+        return;
+      }
+      frame += 0.01;
+      group.rotation.y = THREE.MathUtils.lerp(group.rotation.y, pointer.x * 0.16, 0.04);
+      group.rotation.x = THREE.MathUtils.lerp(group.rotation.x, -pointer.y * 0.08, 0.04);
+      chipMeshes.forEach((mesh, index) => {
+        mesh.position.y += Math.sin(frame + index) * 0.0018;
+      });
+      monitor.rotation.y = Math.sin(frame * 0.7) * 0.025;
+      laptop.rotation.z = Math.sin(frame * 0.8) * 0.015;
+      renderer.render(scene, camera);
+      raf = window.requestAnimationFrame(animate);
+    };
+    animate();
+
+    return () => {
+      window.cancelAnimationFrame(raf);
+      observer.disconnect();
+      window.removeEventListener("resize", resize);
+      window.removeEventListener("pointermove", onPointerMove);
+      mount.removeChild(renderer.domElement);
+      renderer.dispose();
+      scene.traverse((object) => {
+        if (object instanceof THREE.Mesh) {
+          object.geometry.dispose();
+          const material = object.material;
+          if (Array.isArray(material)) material.forEach((item) => item.dispose());
+          else material.dispose();
+        }
+      });
+    };
   }, []);
 
-  if (!ready) {
-    return <div className="absolute inset-0 bg-[#050505]" aria-hidden="true" />;
-  }
-
-  return (
-    <div className="pointer-events-none absolute inset-0" aria-hidden="true">
-      <Canvas
-        camera={{ position: [0, 0.15, 7.2], fov: 43, near: 0.1, far: 80 }}
-        dpr={[1, 1.75]}
-        eventSource={document.body}
-        gl={{ antialias: true, alpha: true, powerPreference: "high-performance" }}
-      >
-        <color attach="background" args={["#050505"]} />
-        <fog attach="fog" args={["#050505", 8, 22]} />
-        <ambientLight intensity={0.45} />
-        <pointLight position={[-3.5, 2.6, 3]} intensity={7} color="#7c3cff" distance={13} />
-        <pointLight position={[3.8, -0.7, 2.2]} intensity={6} color="#00e5ff" distance={12} />
-        <spotLight position={[0, 4.5, 4]} angle={0.5} penumbra={0.85} intensity={5.8} color="#c6fbff" distance={18} />
-        <AuroraField scroll={scroll} />
-        <ParticleCloud scroll={scroll} />
-        <CodeSymbols scroll={scroll} />
-        <GlassHeadphones scroll={scroll} />
-        <CameraRig />
-        <EffectComposer multisampling={0}>
-          <Bloom intensity={1.18} luminanceThreshold={0.18} luminanceSmoothing={0.42} mipmapBlur />
-          <DepthOfField focusDistance={0.035} focalLength={0.05} bokehScale={2.15} />
-          <Vignette eskil={false} offset={0.18} darkness={0.65} />
-        </EffectComposer>
-      </Canvas>
-    </div>
-  );
+  return <div ref={mountRef} className="absolute inset-0 h-full w-full" aria-hidden="true" />;
 }
