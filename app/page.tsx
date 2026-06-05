@@ -182,10 +182,13 @@ export default function Home() {
   const primaryLabel = loggedIn ? "Continue Coding" : "Start Free";
 
   return (
-    <div className="relative min-h-screen overflow-x-hidden bg-[linear-gradient(145deg,#070a13_0%,#090c16_45%,#05070d_100%)]">
-      {/* Ambient background, lifted out of the hero card so it fills the whole page */}
-      <div className="pointer-events-none fixed inset-0 -z-10 bg-[radial-gradient(circle_at_18%_18%,rgba(0,229,255,0.18),transparent_28%),radial-gradient(circle_at_78%_20%,rgba(139,92,246,0.2),transparent_30%),radial-gradient(circle_at_50%_100%,rgba(16,185,129,0.11),transparent_34%)]" />
-      <div className="pointer-events-none fixed inset-0 -z-10 bg-[linear-gradient(rgba(255,255,255,0.025)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.025)_1px,transparent_1px)] bg-[size:72px_72px] opacity-35" />
+    <div className="relative min-h-screen overflow-x-hidden bg-[#05070d]">
+      {/* Full-page ambient background: gradient base + glow + grid (fixed = covers the whole page) */}
+      <div aria-hidden className="pointer-events-none fixed inset-0 z-0">
+        <div className="absolute inset-0 bg-[linear-gradient(145deg,#070a13_0%,#090c16_45%,#05070d_100%)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_18%_18%,rgba(0,229,255,0.18),transparent_28%),radial-gradient(circle_at_78%_20%,rgba(139,92,246,0.2),transparent_30%),radial-gradient(circle_at_50%_100%,rgba(16,185,129,0.11),transparent_34%)]" />
+        <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.05)_1px,transparent_1px)] bg-[size:64px_64px]" />
+      </div>
 
       <Navbar />
 
