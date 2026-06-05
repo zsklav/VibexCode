@@ -166,14 +166,16 @@ export default function ExplorePage() {
   return (
     <>
       <Navbar />
-      <div className="min-h-screen text-gray-800 dark:bg-[#020612] dark:text-white transition-all">
-        <main className="max-w-7xl mx-auto p-4 md:p-10 space-y-10">
+      <div className="min-h-screen vibe-shell transition-all">
+        <div className="vibe-atmosphere" aria-hidden="true" />
+        <div className="vibe-grid" aria-hidden="true" />
+        <main className="relative z-10 max-w-7xl mx-auto p-4 md:p-10 space-y-10">
           {/* Header */}
           <div data-aos="fade-down">
             <h2 className="text-3xl md:text-4xl font-bold">
               {isLoggedIn ? `Welcome, ${displayName}!` : "Welcome!"}
             </h2>
-            <p className="text-gray-600 dark:text-gray-400 mt-1">
+            <p className="text-gray-600 dark:text-gray-300 mt-1">
               {isLoggedIn
                 ? "Here's a snapshot of your activity."
                 : "Log in to see your personal dashboard."}
@@ -220,11 +222,11 @@ export default function ExplorePage() {
                 </div>
 
                 {!isLoggedIn ? (
-                  <div className="bg-white dark:bg-zinc-800 rounded-xl p-6 text-center text-gray-500 dark:text-gray-400 shadow-[0_4px_20px_rgba(128,0,255,0.08)]">
+                  <div className="vibe-card p-6 text-center text-gray-500 dark:text-gray-300">
                     Log in to see your recent submissions.
                   </div>
                 ) : recentTests.length === 0 ? (
-                  <div className="bg-white dark:bg-zinc-800 rounded-xl p-6 text-center shadow-[0_4px_20px_rgba(128,0,255,0.08)]">
+                  <div className="vibe-card p-6 text-center">
                     <p className="text-gray-500 dark:text-gray-400 mb-2">
                       No submissions yet.
                     </p>
@@ -236,7 +238,7 @@ export default function ExplorePage() {
                     </Link>
                   </div>
                 ) : (
-                  <div className="bg-white dark:bg-zinc-800 rounded-xl shadow-[0_4px_20px_rgba(128,0,255,0.08)] overflow-hidden">
+                  <div className="vibe-card overflow-hidden">
                     {recentTests.map((s, i) => (
                       <Link
                         key={s._id}
@@ -268,7 +270,7 @@ export default function ExplorePage() {
                               </span>
                             )}
                           </div>
-                          <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                          <p className="text-xs text-gray-500 dark:text-gray-300 mt-0.5">
                             {s.runtimeMs !== undefined && `${s.runtimeMs}ms · `}
                             {s.language || "—"}
                           </p>
@@ -289,7 +291,7 @@ export default function ExplorePage() {
                   Upcoming Quizzes
                 </h3>
                 {quizzes.length === 0 ? (
-                  <div className="bg-gray-50 dark:bg-zinc-900 border border-dashed border-gray-200 dark:border-zinc-700 rounded-xl p-4 flex items-center gap-3 text-sm text-gray-500 dark:text-gray-400">
+                  <div className="vibe-card border-dashed p-4 flex items-center gap-3 text-sm text-gray-500 dark:text-gray-300">
                     <CalendarDays className="w-5 h-5 shrink-0" />
                     No upcoming quizzes — check back soon.
                   </div>
@@ -298,7 +300,7 @@ export default function ExplorePage() {
                     {quizzes.map((q, i) => (
                       <div
                         key={q._id}
-                        className="bg-white dark:bg-zinc-800 rounded-xl p-5 shadow-[0_4px_20px_rgba(128,0,255,0.12)] transition hover:scale-[1.02] hover:shadow-[0_6px_30px_rgba(128,0,255,0.25)]"
+                        className="vibe-card p-5 transition hover:scale-[1.02]"
                         data-aos="fade-up"
                         data-aos-delay={i * 100}
                       >
@@ -314,7 +316,7 @@ export default function ExplorePage() {
                             href={q.registrationLink}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="inline-block bg-purple-600 hover:bg-purple-700 text-white text-sm px-4 py-1.5 rounded-full transition"
+                            className="inline-block vibe-button px-4 py-1.5 text-sm"
                           >
                             Register
                           </a>
@@ -348,19 +350,19 @@ export default function ExplorePage() {
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
                     placeholder="Search topics..."
-                    className="w-full pl-10 pr-3 py-2 rounded-full border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/30"
+                    className="w-full pl-10 pr-3 py-2 rounded-full border border-gray-200 dark:border-zinc-700 bg-white/80 dark:bg-zinc-800/90 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/30"
                   />
                 </div>
                 <button
                   onClick={scrollLeft}
-                  className="p-2 rounded-full bg-white dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 hover:bg-gray-100 dark:hover:bg-zinc-700 transition"
+                  className="p-2 rounded-full vibe-button-secondary"
                   aria-label="Scroll left"
                 >
                   <ChevronLeft className="w-4 h-4" />
                 </button>
                 <button
                   onClick={scrollRight}
-                  className="p-2 rounded-full bg-white dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 hover:bg-gray-100 dark:hover:bg-zinc-700 transition"
+                  className="p-2 rounded-full vibe-button-secondary"
                   aria-label="Scroll right"
                 >
                   <ChevronRight className="w-4 h-4" />
@@ -373,10 +375,7 @@ export default function ExplorePage() {
                 {search ? `No topics match "${search}".` : "No topics yet."}
               </p>
             ) : (
-              <div
-                ref={scrollRef}
-                className="flex space-x-6 overflow-x-auto scroll-smooth pb-2"
-              >
+              <div ref={scrollRef} className="flex space-x-6 overflow-x-auto scroll-smooth pb-2">
                 {filteredTopics.map(([tag, qs]) => (
                   <TagCard key={tag} tag={tag} questions={qs} />
                 ))}
@@ -399,12 +398,12 @@ const StatPill = ({
   label: string;
   value: string | number;
 }) => (
-  <div className="bg-white dark:bg-zinc-800 rounded-xl p-4 shadow-[0_4px_20px_rgba(128,0,255,0.08)] flex items-center gap-3">
+  <div className="vibe-card p-4 flex items-center gap-3">
     <div className="shrink-0 w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white">
       <Icon className="w-5 h-5" />
     </div>
     <div className="min-w-0">
-      <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+      <p className="text-xs text-gray-500 dark:text-gray-300 truncate">
         {label}
       </p>
       <p className="text-xl font-bold leading-tight">{value}</p>

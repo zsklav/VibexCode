@@ -1,15 +1,15 @@
 import type { Metadata } from "next";
-import { Sora, Geist_Mono } from "next/font/google";
+import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { ReduxProvider } from "./store/provider";
 import RouteProgress from "./components/RouteProgress";
 import AuthGuard from "./components/AuthGuard";
+import GlobalAIOrb from "./components/GlobalAIOrb";
 
-// Load Sora for main text
-const sora = Sora({
-  variable: "--font-sora",
+// Load Geist for main text
+const geistSans = Geist({
+  variable: "--font-geist-sans",
   subsets: ["latin"],
-  weight: ["400", "600", "700"],
 });
 
 // Load Geist Mono for code blocks
@@ -76,11 +76,16 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${sora.variable} ${geistMono.variable}`}>
-      <body className="bg-gradient-to-r cursor-text2 from-[#e0c3fc] to-[#8ec5fc] dark:bg-black min-h-screen antialiased">
+    <html lang="en" className={`${geistSans.variable} ${geistMono.variable}`} suppressHydrationWarning>
+      <body className="antialiased aurora-bg text-slate-100 min-h-screen">
         <RouteProgress />
         <ReduxProvider>
-          <AuthGuard>{children}</AuthGuard>
+          <AuthGuard>
+            <div className="flex flex-col min-h-screen">
+              {children}
+            </div>
+            <GlobalAIOrb />
+          </AuthGuard>
         </ReduxProvider>
       </body>
     </html>

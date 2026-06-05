@@ -159,7 +159,7 @@ const FriendsSection = () => {
 
   if (!isLoggedIn) {
     return (
-      <div className="bg-white dark:bg-zinc-800 rounded-xl shadow p-4">
+      <div className="vibe-card p-4">
         <h2 className="text-lg font-semibold mb-2">Network</h2>
         <p className="text-sm text-gray-500 dark:text-gray-400">
           Log in to follow other coders.
@@ -186,7 +186,7 @@ const FriendsSection = () => {
     : [];
 
   return (
-    <div className="bg-white dark:bg-zinc-800 rounded-xl shadow p-4 space-y-3">
+    <div className="vibe-card p-4 space-y-3">
       <h2 className="text-lg font-semibold">Network</h2>
 
       {/* Search */}
@@ -196,7 +196,7 @@ const FriendsSection = () => {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Search users by name or email..."
-          className="w-full pl-9 pr-8 py-2 text-sm rounded-lg border border-gray-200 dark:border-zinc-700 bg-gray-50 dark:bg-zinc-900 focus:outline-none focus:ring-2 focus:ring-purple-500/40"
+          className="w-full pl-9 pr-8 py-2 text-sm rounded-lg border border-gray-200 dark:border-zinc-700 bg-white/80 dark:bg-zinc-900/80 focus:outline-none focus:ring-2 focus:ring-purple-500/40"
         />
         <svg
           className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400"

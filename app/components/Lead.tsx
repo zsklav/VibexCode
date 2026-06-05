@@ -56,7 +56,7 @@ const Lead = () => {
   return (
     <div className="space-y-4 w-full">
       <h3 className="text-xl font-semibold">Leaderboard</h3>
-      <div className="bg-white dark:bg-zinc-800 rounded-xl p-4 space-y-3 overflow-y-auto max-h-[600px] shadow-[0_4px_20px_rgba(128,0,255,0.4)]">
+      <div className="vibe-card p-4 space-y-3 overflow-y-auto max-h-[600px]">
         {leaderboardData.length === 0 ? (
           <p className="text-gray-500 text-center py-4">No data available.</p>
         ) : (

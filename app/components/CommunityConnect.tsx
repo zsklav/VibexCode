@@ -161,7 +161,7 @@ const CommunityConnect: React.FC = () => {
 
   if (!isLoggedIn || !userEmail) {
     return (
-      <div className="w-full max-w-md mx-auto bg-white dark:bg-slate-800 rounded-2xl shadow-xl p-6 border text-center">
+      <div className="w-full max-w-md mx-auto vibe-card p-6 text-center">
         <h3 className="text-lg font-semibold mb-2 text-gray-800 dark:text-white">
           Community Connect
         </h3>
@@ -174,7 +174,7 @@ const CommunityConnect: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="w-full max-w-md mx-auto bg-white dark:bg-slate-800 rounded-2xl shadow-xl p-6 flex items-center justify-center h-64 border">
+      <div className="w-full max-w-md mx-auto vibe-card p-6 flex items-center justify-center h-64">
         <div className="text-center">
           <Loader2 className="animate-spin h-8 w-8 text-blue-500 mx-auto mb-2" />
           <p className="text-slate-400 text-sm">Loading Community...</p>
@@ -185,10 +185,10 @@ const CommunityConnect: React.FC = () => {
 
   if (error && !isSubmitting) {
     return (
-      <div className="w-full max-w-md mx-auto bg-slate-800 rounded-2xl shadow-xl p-6 border border-slate-700 text-center">
+      <div className="w-full max-w-md mx-auto vibe-card p-6 text-center">
         <AlertTriangle size={48} className="mx-auto mb-2 text-red-400" />
-        <h3 className="text-lg font-semibold text-white">An Error Occurred</h3>
-        <p className="text-slate-300 text-sm my-4">{error}</p>
+        <h3 className="text-lg font-semibold text-gray-800 dark:text-white">An Error Occurred</h3>
+        <p className="text-gray-600 dark:text-slate-300 text-sm my-4">{error}</p>
         <button
           onClick={() => window.location.reload()}
           className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg"
@@ -204,7 +204,7 @@ const CommunityConnect: React.FC = () => {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
-      className="bg-white dark:bg-slate-800 rounded-2xl shadow-md p-6 h-full"
+      className="vibe-card p-6 h-full"
     >
       <h2 className="text-2xl font-bold mb-4 text-center text-gray-800 dark:text-white">
         Community Connect

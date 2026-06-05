@@ -179,7 +179,7 @@ const PersonalTODO = () => {
   // Loading
   if (loading) {
     return (
-      <div className="w-full bg-white max-w-md mx-auto dark:bg-slate-800 rounded-2xl shadow-xl p-6 flex items-center justify-center h-64 border">
+      <div className="w-full bg-white max-w-md mx-auto dark:bg-slate-800 rounded-2xl shadow-xl p-6 flex items-center justify-center h-64 border vibe-emboss">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-2"></div>
           <p className="text-slate-400 text-sm">Loading tasks...</p>
@@ -191,7 +191,7 @@ const PersonalTODO = () => {
   // Error
   if (error) {
     return (
-      <div className="w-full max-w-md mx-auto bg-slate-800 rounded-2xl shadow-xl p-6 border border-slate-700">
+      <div className="w-full max-w-md mx-auto bg-slate-800 rounded-2xl shadow-xl p-6 border border-slate-700 vibe-emboss">
         <div className="text-center">
           <div className="text-red-400 mb-4">
             <Clock size={48} className="mx-auto mb-2" />
@@ -210,7 +210,7 @@ const PersonalTODO = () => {
   }
 
   return (
-    <div className="w-full max-w-md mx-auto bg-slate-800 rounded-2xl shadow-xl p-6 flex flex-col h-full max-h-[95vh] border border-slate-700">
+    <div className="w-full max-w-md mx-auto bg-slate-800 rounded-2xl shadow-xl p-6 flex flex-col h-full max-h-[95vh] border border-slate-700 vibe-emboss">
       {/* Header */}
       <div className="mb-6">
         <h2 className="text-2xl font-bold text-white mb-2">Personal TODO</h2>

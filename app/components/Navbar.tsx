@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import { AnimatePresence, motion } from "framer-motion";
 import {
@@ -16,6 +16,7 @@ import {
   User,
   Users,
   X,
+  Sparkles
 } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
 import { getAuth, signOut } from "firebase/auth";
@@ -37,13 +38,9 @@ const NAV_ITEMS = [
   { label: "Community", href: "/community", icon: Users },
 ];
 
-const menuVariants = {
-  hidden: { opacity: 0, y: -8, scale: 0.98 },
-  visible: { opacity: 1, y: 0, scale: 1 },
-};
-
 const Navbar = () => {
   const router = useRouter();
+  const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const profileRef = useRef<HTMLDivElement | null>(null);
@@ -59,11 +56,9 @@ const Navbar = () => {
         const userData = await authservice.checkUser();
         dispatch(login({ status: Boolean(userData), userData: userData || null }));
       } catch (error) {
-        console.error("Error checking user:", error);
         dispatch(login({ status: false, userData: null }));
       }
     };
-
     if (!isLoggedIn) checkUser();
   }, [dispatch, isLoggedIn]);
 
@@ -91,66 +86,77 @@ const Navbar = () => {
       router.push("/login");
       router.refresh();
     } catch (error) {
-      console.error("Logout Error:", error);
       dispatch(logoutAction());
       router.push("/login");
     }
   };
 
   return (
-    <nav className="sticky top-0 z-50 w-full px-3 py-3 sm:px-5">
-      <div className="mx-auto flex max-w-7xl items-center justify-between rounded-2xl border border-white/50 bg-white/74 px-3 py-2 shadow-[0_18px_60px_rgba(15,23,42,0.12)] backdrop-blur-xl dark:border-white/10 dark:bg-zinc-950/68 dark:shadow-black/30">
-        <div className="flex items-center gap-2">
+    <nav className="fixed top-4 inset-x-0 z-50 flex justify-center px-4 pointer-events-none">
+      <div className="pointer-events-auto flex w-full max-w-5xl items-center justify-between rounded-full bg-white/70 dark:bg-[#030712]/60 backdrop-blur-xl border border-black/10 dark:border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.1)] dark:shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.1)] px-4 py-2.5 transition-all">
+        
+        <div className="flex items-center gap-4">
           <button
             onClick={() => setMenuOpen((prev) => !prev)}
-            className="rounded-xl p-2 text-zinc-700 transition hover:bg-zinc-100 dark:text-zinc-200 dark:hover:bg-white/10 md:hidden"
-            aria-label={menuOpen ? "Close navigation menu" : "Open navigation menu"}
+            className="md:hidden text-slate-600 dark:text-slate-300 hover:text-black dark:hover:text-white transition-colors p-1"
           >
             {menuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </button>
-          <Logo />
+          <div className="mr-4">
+            <Logo />
+          </div>
         </div>
 
-        <div className="hidden items-center gap-1 md:flex">
+        <div className="hidden md:flex items-center gap-1 bg-black/5 dark:bg-white/5 rounded-full p-1 border border-black/5 dark:border-white/5">
           {NAV_ITEMS.map((item) => {
-            const Icon = item.icon;
+            const isActive = pathname === item.href;
             return (
               <Link
                 key={item.href}
                 href={item.href}
-                className="group inline-flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-zinc-700 transition hover:bg-zinc-950 hover:text-white dark:text-zinc-200 dark:hover:bg-white dark:hover:text-zinc-950"
+                className={cn(
+                  "relative px-4 py-1.5 text-sm font-medium rounded-full transition-colors duration-200 z-10",
+                  isActive ? "text-black dark:text-white" : "text-slate-500 dark:text-slate-400 hover:text-black dark:hover:text-white"
+                )}
               >
-                <Icon className="h-4 w-4 opacity-70 transition group-hover:opacity-100" />
+                {isActive && (
+                  <motion.div
+                    layoutId="navbar-active-pill"
+                    className="absolute inset-0 bg-white shadow-sm border border-black/5 dark:bg-gradient-to-b dark:from-white/10 dark:to-transparent dark:border-white/10 rounded-full dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.2)] -z-10"
+                    transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+                  />
+                )}
                 {item.label}
               </Link>
             );
           })}
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
           <ThemeToggle />
+          
           {isLoggedIn ? (
             <div className="relative" ref={profileRef}>
               <button
                 onClick={() => setShowProfileMenu((value) => !value)}
-                className="flex items-center gap-2 rounded-xl border border-zinc-200 bg-white px-2.5 py-2 text-sm font-medium text-zinc-900 shadow-sm transition hover:border-zinc-300 dark:border-white/10 dark:bg-white/10 dark:text-white dark:hover:bg-white/15"
-                aria-haspopup="menu"
-                aria-expanded={showProfileMenu}
+                className="flex items-center gap-2 pl-2 pr-3 py-1.5 rounded-full bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 border border-black/5 dark:border-white/10 transition-colors"
               >
-                <User className="h-4 w-4" />
-                <span className="hidden max-w-28 truncate sm:inline">
-                  {authState.userData?.name || "Account"}
+                <div className="w-6 h-6 rounded-full bg-gradient-to-tr from-[#00f0ff] to-[#8a2be2] flex items-center justify-center shadow-[0_0_10px_rgba(0,240,255,0.4)]">
+                  <User className="h-3.5 w-3.5 text-white" />
+                </div>
+                <span className="hidden sm:inline text-sm font-medium text-slate-800 dark:text-slate-200">
+                  {authState.userData?.name?.split(" ")[0] || "Profile"}
                 </span>
               </button>
+
               <AnimatePresence>
                 {showProfileMenu && (
                   <motion.div
-                    variants={menuVariants}
-                    initial="hidden"
-                    animate="visible"
-                    exit="hidden"
-                    transition={{ duration: 0.16 }}
-                    className="absolute right-0 mt-3 w-56 overflow-hidden rounded-2xl border border-zinc-200 bg-white p-2 shadow-2xl dark:border-white/10 dark:bg-zinc-950"
+                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                    transition={{ duration: 0.15 }}
+                    className="absolute right-0 mt-4 w-56 rounded-2xl bg-white/95 dark:bg-[#0a0f1c]/90 backdrop-blur-2xl border border-black/10 dark:border-white/10 shadow-[0_20px_40px_rgba(0,0,0,0.1)] dark:shadow-[0_20px_40px_rgba(0,0,0,0.6),inset_0_1px_1px_rgba(255,255,255,0.1)] p-2"
                   >
                     <MenuButton icon={User} label="Profile" onClick={() => navigate("/Profile")} />
                     <MenuButton icon={Code2} label="Submissions" onClick={() => navigate("/submissions")} />
@@ -158,8 +164,7 @@ const Navbar = () => {
                     {isAdminEmail(authState.userData?.email) && (
                       <MenuButton icon={Shield} label="Admin" onClick={() => navigate("/admin")} accent />
                     )}
-                    <div className="my-1 h-px bg-zinc-200 dark:bg-white/10" />
-                    <MenuButton icon={Rocket} label="Start Vibing" onClick={() => navigate("/problems")} strong />
+                    <div className="h-px bg-white/10 my-2 mx-2" />
                     <MenuButton icon={LogOut} label="Logout" onClick={handleLogout} danger />
                   </motion.div>
                 )}
@@ -169,66 +174,47 @@ const Navbar = () => {
             <div className="flex items-center gap-2">
               <button
                 onClick={() => navigate("/login")}
-                className="hidden rounded-xl px-3 py-2 text-sm font-semibold text-zinc-700 transition hover:bg-zinc-100 dark:text-zinc-200 dark:hover:bg-white/10 sm:inline-flex"
+                className="hidden sm:block px-4 py-2 text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-black dark:hover:text-white transition-colors"
               >
-                Log In
+                Log in
               </button>
               <button
                 onClick={() => navigate("/signup")}
-                className="inline-flex items-center gap-2 rounded-xl bg-zinc-950 px-3.5 py-2 text-sm font-semibold text-white shadow-lg shadow-teal-500/20 transition hover:-translate-y-0.5 hover:bg-zinc-800 dark:bg-white dark:text-zinc-950 dark:hover:bg-zinc-200"
+                className="relative flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white dark:text-[#030712] rounded-full overflow-hidden group"
               >
-                <Rocket className="h-4 w-4" />
-                Join
+                <div className="absolute inset-0 bg-gradient-to-r from-[#00f0ff] to-[#00ffcc] transition-transform duration-300 group-hover:scale-105" />
+                <div className="absolute inset-0 bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity" />
+                <Sparkles className="relative z-10 h-4 w-4" />
+                <span className="relative z-10">Join Free</span>
               </button>
             </div>
           )}
         </div>
       </div>
 
+      {/* Mobile Menu */}
       <AnimatePresence>
         {menuOpen && (
           <motion.div
-            initial={{ opacity: 0, y: -10 }}
+            initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            transition={{ duration: 0.2 }}
-            className="mx-auto mt-2 max-w-7xl rounded-2xl border border-white/50 bg-white/92 p-3 shadow-2xl backdrop-blur-xl dark:border-white/10 dark:bg-zinc-950/92 md:hidden"
+            exit={{ opacity: 0, y: -20 }}
+            className="absolute top-20 inset-x-4 max-w-sm mx-auto bg-white/95 dark:bg-[#0a0f1c]/95 backdrop-blur-2xl rounded-3xl border border-black/10 dark:border-white/10 shadow-2xl p-4 pointer-events-auto"
           >
-            <div className="grid gap-1">
+            <div className="flex flex-col gap-2">
               {NAV_ITEMS.map((item) => {
                 const Icon = item.icon;
                 return (
                   <button
                     key={item.href}
                     onClick={() => navigate(item.href)}
-                    className="flex items-center gap-3 rounded-xl px-3 py-3 text-left text-sm font-semibold text-zinc-800 transition hover:bg-zinc-100 dark:text-zinc-100 dark:hover:bg-white/10"
+                    className="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-800 dark:text-slate-200 hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
                   >
-                    <Icon className="h-4 w-4 text-teal-500" />
-                    {item.label}
+                    <Icon className="w-5 h-5 text-[#00f0ff]" />
+                    <span className="font-medium">{item.label}</span>
                   </button>
                 );
               })}
-              <div className="mt-2 grid grid-cols-2 gap-2 border-t border-zinc-200 pt-3 dark:border-white/10">
-                {isLoggedIn ? (
-                  <>
-                    <button onClick={() => navigate("/Profile")} className="rounded-xl bg-zinc-100 px-3 py-2 text-sm font-semibold dark:bg-white/10">
-                      Profile
-                    </button>
-                    <button onClick={handleLogout} className="rounded-xl bg-red-50 px-3 py-2 text-sm font-semibold text-red-600 dark:bg-red-950/30">
-                      Logout
-                    </button>
-                  </>
-                ) : (
-                  <>
-                    <button onClick={() => navigate("/login")} className="rounded-xl bg-zinc-100 px-3 py-2 text-sm font-semibold dark:bg-white/10">
-                      Log In
-                    </button>
-                    <button onClick={() => navigate("/signup")} className="rounded-xl bg-zinc-950 px-3 py-2 text-sm font-semibold text-white dark:bg-white dark:text-zinc-950">
-                      Sign Up
-                    </button>
-                  </>
-                )}
-              </div>
             </div>
           </motion.div>
         )}
@@ -243,23 +229,19 @@ function MenuButton({
   onClick,
   accent,
   danger,
-  strong,
 }: {
   icon: React.ComponentType<{ className?: string }>;
   label: string;
   onClick: () => void;
   accent?: boolean;
   danger?: boolean;
-  strong?: boolean;
 }) {
   return (
     <button
       onClick={onClick}
       className={cn(
-        "flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-medium transition hover:bg-zinc-100 dark:hover:bg-white/10",
-        accent && "text-teal-600 dark:text-teal-300",
-        danger && "text-red-600 dark:text-red-400",
-        strong && "bg-zinc-950 text-white hover:bg-zinc-800 dark:bg-white dark:text-zinc-950 dark:hover:bg-zinc-200"
+        "flex w-full items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors hover:bg-black/5 dark:hover:bg-white/5",
+        accent ? "text-[#0ea5e9] dark:text-[#00f0ff]" : danger ? "text-rose-500 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-500/10" : "text-slate-800 dark:text-slate-200"
       )}
     >
       <Icon className="h-4 w-4" />

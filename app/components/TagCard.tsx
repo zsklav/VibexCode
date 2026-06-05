@@ -46,14 +46,16 @@ export default function TagCard({
     <>
       {/* Card */}
       <div
-        className="min-w-[400px] max-w-xs bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl p-5 text-white shadow-lg cursor-pointer hover:scale-[1.03] transition-transform"
+        className="min-w-[400px] max-w-xs vibe-card vibe-glow p-5 cursor-pointer hover:scale-[1.03] transition-transform"
         onClick={() => setIsModalOpen(true)}
       >
         <div className="flex flex-col h-full justify-between gap-4">
           {/* Title & Count */}
           <div>
-            <h2 className="text-xl font-semibold capitalize">{tag}</h2>
-            <p className="mt-1 text-sm text-white/80">
+            <h2 className="text-xl font-semibold capitalize text-zinc-900 dark:text-white">
+              {tag}
+            </h2>
+            <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-300">
               {questions.length} Question{questions.length !== 1 ? "s" : ""}
             </p>
           </div>
@@ -72,7 +74,7 @@ export default function TagCard({
                   stroke="currentColor"
                   strokeWidth="4"
                   fill="none"
-                  className="text-white/20"
+                  className="text-zinc-300/60 dark:text-white/25"
                 />
                 <circle
                   cx="32"
@@ -83,19 +85,21 @@ export default function TagCard({
                   fill="none"
                   strokeDasharray={`${2 * Math.PI * 28}`}
                   strokeDashoffset={`${2 * Math.PI * 28 * 0.7}`} // 30% progress
-                  className="text-white"
+                  className="text-zinc-900 dark:text-white"
                   strokeLinecap="round"
                 />
               </svg>
               <div className="absolute inset-0 flex items-center justify-center">
-                <span className="text-sm font-bold">30%</span>
+                <span className="text-sm font-bold text-zinc-900 dark:text-white">30%</span>
               </div>
             </div>
           </div>
 
           {/* Hint Text */}
           <div className="text-center">
-            <p className="text-white/80 text-sm">Click to view questions</p>
+            <p className="text-zinc-600 dark:text-zinc-300 text-sm">
+              Click to view questions
+            </p>
           </div>
         </div>
       </div>
@@ -103,18 +107,18 @@ export default function TagCard({
       {/* Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-gray-900 rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden shadow-2xl">
+          <div className="vibe-panel max-w-4xl w-full max-h-[90vh] overflow-hidden shadow-2xl">
             {/* Header */}
-            <div className="bg-gradient-to-r from-blue-500 to-purple-600 p-6 text-white flex justify-between items-center">
+            <div className="p-6 flex justify-between items-center border-b border-zinc-200/50 dark:border-white/10">
               <div>
-                <h2 className="text-2xl font-bold">{tag}</h2>
-                <p className="text-white/80">
+                <h2 className="text-2xl font-bold text-zinc-900 dark:text-white">{tag}</h2>
+                <p className="text-zinc-600 dark:text-zinc-300">
                   {questions.length} Question{questions.length !== 1 ? "s" : ""}
                 </p>
               </div>
               <button
                 onClick={() => setIsModalOpen(false)}
-                className="bg-white/20 hover:bg-white/30 rounded-full p-2"
+                className="vibe-button-secondary rounded-full p-2"
               >
                 <svg
                   className="w-6 h-6"
@@ -141,10 +145,10 @@ export default function TagCard({
                 return (
                   <div
                     key={q._id}
-                    className="p-5 border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-800 shadow-sm"
+                    className="vibe-card p-5"
                   >
                     <div className="flex items-start gap-3 mb-3">
-                      <span className="bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-2 py-1 rounded text-sm font-medium">
+                      <span className="vibe-chip text-gray-700 dark:text-gray-300 text-sm font-medium">
                         #{index + 1}
                       </span>
                       <span
@@ -157,7 +161,7 @@ export default function TagCard({
                         {q.difficulty || "easy"}
                       </span>
                       <div className="flex-1">
-                        <h3 className="text-lg font-semibold text-blue-600 dark:text-blue-400">
+                        <h3 className="text-lg font-semibold text-blue-600 dark:text-blue-300">
                           {q.title}
                         </h3>
                       </div>
@@ -172,7 +176,7 @@ export default function TagCard({
                       {shouldShowExpand && (
                         <button
                           onClick={() => setExpanded(isExpanded ? null : q._id)}
-                          className="text-blue-600 dark:text-blue-400 hover:underline text-sm mt-2 font-medium"
+                          className="text-blue-600 dark:text-blue-300 hover:underline text-sm mt-2 font-medium"
                         >
                           {isExpanded ? "Show less" : "Read more"}
                         </button>
@@ -184,7 +188,7 @@ export default function TagCard({
                         {q.tags?.map((t, idx) => (
                           <button
                             key={t + idx}
-                            className="text-xs px-3 py-1 rounded-full bg-blue-100 dark:bg-blue-800 text-blue-800 dark:text-blue-200 hover:bg-blue-200 dark:hover:bg-blue-700 transition-colors"
+                            className="vibe-chip text-blue-800 dark:text-blue-200"
                             onClick={() => onTagClick?.(t)}
                           >
                             {t}
@@ -193,7 +197,7 @@ export default function TagCard({
                       </div>
                       <a
                         href={`/playground?id=${q._id}`}
-                        className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded font-semibold transition"
+                        className="vibe-button px-4 py-2 font-semibold"
                       >
                         Solve
                       </a>

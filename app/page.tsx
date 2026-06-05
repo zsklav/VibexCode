@@ -1,20 +1,21 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { useSelector } from "react-redux";
+import gsap from "gsap";
 import {
   ArrowRight,
+  Bot,
   Braces,
-  CheckCircle2,
   Code2,
-  MessageSquare,
+  Command,
+  GitBranch,
+  MessagesSquare,
   Play,
   Sparkles,
-  Trophy,
   Users,
-  Zap,
 } from "lucide-react";
 
 import Navbar from "./components/Navbar";
@@ -22,39 +23,23 @@ import HeroWorkspace3D from "./components/HeroWorkspace3D";
 import authservice from "@/app/auth/firebase-auth";
 import { RootState } from "./store/store";
 
-const capabilities = [
-  {
-    icon: Code2,
-    title: "Practice that feels alive",
-    text: "Solve problems, run code, track progress, and keep momentum without leaving the workspace.",
-  },
-  {
-    icon: MessageSquare,
-    title: "Real-time developer chat",
-    text: "Discuss approaches, share files, launch tools, and collaborate while the context is still fresh.",
-  },
-  {
-    icon: Trophy,
-    title: "Progress with signal",
-    text: "Leaderboards, submissions, and activity views help you see what improved and what needs work.",
-  },
+const heroLinks = [
+  { label: "Problems", href: "/problems", icon: Code2, glow: "from-cyan-400/35 to-blue-500/10" },
+  { label: "Playground", href: "/playground", icon: Play, glow: "from-violet-400/35 to-cyan-500/10" },
+  { label: "Community", href: "/community", icon: Users, glow: "from-blue-400/35 to-fuchsia-500/10" },
+  { label: "AI Assistant", href: "/Dashboard", icon: Bot, glow: "from-fuchsia-400/35 to-cyan-500/10" },
 ];
 
-const workflow = [
-  "Choose a topic or open the playground",
-  "Build, test, ask, and discuss in one flow",
-  "Save progress and return with context intact",
-];
-
-const stats = [
-  { label: "Core routes", value: "50+" },
-  { label: "Realtime tools", value: "Live" },
-  { label: "Focus mode", value: "24/7" },
+const signals = [
+  { label: "Live rooms", value: "Community", icon: MessagesSquare },
+  { label: "Ship loop", value: "Build", icon: GitBranch },
+  { label: "Focus stack", value: "2AM", icon: Command },
 ];
 
 export default function Home() {
   const [loggedIn, setLoggedIn] = useState(false);
   const authStatus = useSelector((state: RootState) => state.auth.status);
+  const heroRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
     const checkUser = async () => {
@@ -69,175 +54,165 @@ export default function Home() {
     checkUser();
   }, [authStatus]);
 
+  useEffect(() => {
+    if (!heroRef.current) return;
+    const ctx = gsap.context(() => {
+      gsap.fromTo(
+        ".hero-reveal",
+        { opacity: 0, y: 24, filter: "blur(10px)" },
+        {
+          opacity: 1,
+          y: 0,
+          filter: "blur(0px)",
+          duration: 1.15,
+          ease: "power3.out",
+          stagger: 0.12,
+        }
+      );
+    }, heroRef);
+
+    return () => ctx.revert();
+  }, []);
+
   const primaryHref = loggedIn ? "/problems" : "/signup";
-  const primaryLabel = loggedIn ? "Continue Coding" : "Start Free";
+  const primaryLabel = loggedIn ? "Continue Coding" : "Start Building";
 
   return (
-    <div className="min-h-screen overflow-x-hidden bg-[#f7f3eb] text-zinc-950 dark:bg-[#080a0f] dark:text-white">
+    <div className="relative min-h-screen overflow-hidden bg-[#f8fbff] text-slate-950 dark:bg-[#050505] dark:text-white">
       <Navbar />
 
       <main>
-        <section className="relative -mt-20 min-h-[calc(100svh+1rem)] overflow-hidden pt-20">
-          <div className="absolute inset-0 bg-[linear-gradient(115deg,#f8fafc_0%,#f7f3eb_34%,#d7f7ee_68%,#ffd9c7_100%)] dark:bg-[linear-gradient(115deg,#080a0f_0%,#111827_42%,#052e2b_70%,#2a1116_100%)]" />
+        <section
+          ref={heroRef}
+          className="relative min-h-[100svh] overflow-hidden bg-[#050505] px-4 pb-12 pt-28 text-white sm:px-6 lg:px-8"
+        >
           <HeroWorkspace3D />
-          <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(247,243,235,0.94)_0%,rgba(247,243,235,0.78)_39%,rgba(247,243,235,0.16)_76%)] dark:bg-[linear-gradient(90deg,rgba(8,10,15,0.96)_0%,rgba(8,10,15,0.76)_42%,rgba(8,10,15,0.12)_78%)]" />
+          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_28%_18%,rgba(124,58,237,0.22),transparent_32%),radial-gradient(circle_at_76%_28%,rgba(0,229,255,0.18),transparent_30%),linear-gradient(180deg,rgba(5,5,5,0.16),#050505_92%)]" />
+          <div className="pointer-events-none absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-[#050505] to-transparent" />
 
-          <div className="relative z-10 mx-auto flex min-h-[calc(100svh-5rem)] max-w-7xl items-center px-4 pb-16 pt-10 sm:px-6 lg:px-8">
-            <div className="max-w-3xl">
-              <motion.div
-                initial={{ opacity: 0, y: 18 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.55 }}
-                className="mb-5 inline-flex items-center gap-2 rounded-full border border-zinc-950/10 bg-white/70 px-3 py-1.5 text-sm font-medium text-zinc-700 shadow-sm backdrop-blur dark:border-white/10 dark:bg-white/10 dark:text-zinc-200"
-              >
-                <Sparkles className="h-4 w-4 text-teal-500" />
-                Developer workspace for practice, chat, and momentum
-              </motion.div>
+          <div className="relative z-10 mx-auto grid min-h-[calc(100svh-10rem)] max-w-[1380px] items-center gap-10 lg:grid-cols-[minmax(0,1fr)_420px]">
+            <div className="max-w-4xl">
+              <div className="hero-reveal mb-7 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.06] px-4 py-2 text-sm font-medium text-cyan-100 shadow-[0_0_40px_rgba(0,229,255,0.12)] backdrop-blur-2xl">
+                <Sparkles className="h-4 w-4 text-cyan-300" />
+                Developer flow, community, and AI in one premium workspace
+              </div>
 
-              <motion.h1
-                initial={{ opacity: 0, y: 22 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.08, duration: 0.65 }}
-                className="max-w-4xl text-5xl font-black leading-[0.95] tracking-normal text-zinc-950 dark:text-white sm:text-6xl lg:text-7xl"
-              >
-                Code better with a workspace that keeps up.
-              </motion.h1>
+              <h1 className="hero-reveal max-w-5xl text-balance text-6xl font-black leading-[0.92] tracking-normal sm:text-7xl lg:text-8xl xl:text-[7.6rem]">
+                <span className="hero-gradient-text">Code. Create. Ship.</span>
+              </h1>
 
-              <motion.p
-                initial={{ opacity: 0, y: 18 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.18, duration: 0.55 }}
-                className="mt-6 max-w-2xl text-base leading-7 text-zinc-700 dark:text-zinc-300 sm:text-lg"
-              >
-                VibeXCode brings practice, real-time community chat, coding tools,
-                progress tracking, and collaboration into one smooth developer-first
-                environment.
-              </motion.p>
+              <p className="hero-reveal mt-8 max-w-2xl text-pretty text-lg leading-8 text-slate-300 sm:text-xl">
+                VibeXCode transforms ideas into production-ready software with the power of
+                community, collaboration, and AI.
+              </p>
 
-              <motion.div
-                initial={{ opacity: 0, y: 16 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.28, duration: 0.5 }}
-                className="mt-8 flex flex-col gap-3 sm:flex-row"
-              >
+              <div className="hero-reveal mt-10 flex flex-col gap-3 sm:flex-row">
                 <Link
                   href={primaryHref}
-                  className="group inline-flex items-center justify-center gap-2 rounded-xl bg-zinc-950 px-5 py-3 text-sm font-bold text-white shadow-2xl shadow-teal-500/20 transition hover:-translate-y-0.5 hover:bg-zinc-800 dark:bg-white dark:text-zinc-950 dark:hover:bg-zinc-200"
+                  className="group inline-flex min-h-14 items-center justify-center gap-2 rounded-2xl border border-cyan-200/30 bg-cyan-100 px-6 text-base font-bold text-slate-950 shadow-[0_0_42px_rgba(0,229,255,0.28)] transition duration-300 hover:-translate-y-0.5 hover:bg-white hover:shadow-[0_0_64px_rgba(0,229,255,0.42)]"
                 >
                   {primaryLabel}
-                  <ArrowRight className="h-4 w-4 transition group-hover:translate-x-0.5" />
+                  <ArrowRight className="h-5 w-5 transition group-hover:translate-x-0.5" />
                 </Link>
                 <Link
                   href="/playground"
-                  className="inline-flex items-center justify-center gap-2 rounded-xl border border-zinc-950/10 bg-white/72 px-5 py-3 text-sm font-bold text-zinc-900 shadow-lg backdrop-blur transition hover:-translate-y-0.5 hover:bg-white dark:border-white/10 dark:bg-white/10 dark:text-white dark:hover:bg-white/15"
+                  className="inline-flex min-h-14 items-center justify-center gap-2 rounded-2xl border border-white/12 bg-white/[0.07] px-6 text-base font-semibold text-white backdrop-blur-2xl transition duration-300 hover:-translate-y-0.5 hover:border-cyan-200/40 hover:bg-white/[0.11]"
                 >
-                  <Play className="h-4 w-4" />
+                  <Play className="h-5 w-5" />
                   Open Playground
                 </Link>
-              </motion.div>
-
-              <motion.div
-                initial={{ opacity: 0, y: 14 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.38, duration: 0.5 }}
-                className="mt-9 grid max-w-xl grid-cols-3 gap-3"
-              >
-                {stats.map((stat) => (
-                  <div key={stat.label} className="rounded-xl border border-zinc-950/10 bg-white/64 px-3 py-3 backdrop-blur dark:border-white/10 dark:bg-white/10">
-                    <p className="text-2xl font-black">{stat.value}</p>
-                    <p className="mt-1 text-xs font-medium text-zinc-600 dark:text-zinc-400">
-                      {stat.label}
-                    </p>
-                  </div>
-                ))}
-              </motion.div>
-            </div>
-          </div>
-
-          <div className="absolute bottom-0 left-0 right-0 z-10 h-20 bg-gradient-to-t from-[#f7f3eb] to-transparent dark:from-[#080a0f]" />
-        </section>
-
-        <section className="relative z-20 mx-auto grid max-w-7xl gap-4 px-4 pb-20 sm:px-6 lg:grid-cols-3 lg:px-8">
-          {capabilities.map((item, index) => {
-            const Icon = item.icon;
-            return (
-              <motion.article
-                key={item.title}
-                initial={{ opacity: 0, y: 18 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, margin: "-80px" }}
-                transition={{ delay: index * 0.08, duration: 0.45 }}
-                className="rounded-2xl border border-zinc-950/10 bg-white/80 p-5 shadow-xl shadow-zinc-900/5 backdrop-blur dark:border-white/10 dark:bg-white/8"
-              >
-                <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-xl bg-zinc-950 text-white dark:bg-white dark:text-zinc-950">
-                  <Icon className="h-5 w-5" />
-                </div>
-                <h2 className="text-lg font-bold">{item.title}</h2>
-                <p className="mt-2 text-sm leading-6 text-zinc-600 dark:text-zinc-300">
-                  {item.text}
-                </p>
-              </motion.article>
-            );
-          })}
-        </section>
-
-        <section className="mx-auto grid max-w-7xl gap-8 px-4 pb-24 sm:px-6 lg:grid-cols-[0.9fr_1.1fr] lg:px-8">
-          <div>
-            <p className="mb-3 inline-flex items-center gap-2 rounded-full bg-teal-500/12 px-3 py-1.5 text-sm font-semibold text-teal-700 dark:text-teal-300">
-              <Zap className="h-4 w-4" />
-              Built for flow
-            </p>
-            <h2 className="text-3xl font-black leading-tight sm:text-4xl">
-              Less switching. More building.
-            </h2>
-            <p className="mt-4 max-w-xl text-sm leading-7 text-zinc-600 dark:text-zinc-300 sm:text-base">
-              The platform is designed around the way developers actually work:
-              search, solve, chat, compare, ship, and come back tomorrow without
-              losing the thread.
-            </p>
-          </div>
-
-          <div className="rounded-2xl border border-zinc-950/10 bg-zinc-950 p-4 text-white shadow-2xl shadow-zinc-950/20 dark:border-white/10">
-            <div className="mb-4 flex items-center gap-2 border-b border-white/10 pb-3">
-              <span className="h-3 w-3 rounded-full bg-red-400" />
-              <span className="h-3 w-3 rounded-full bg-yellow-400" />
-              <span className="h-3 w-3 rounded-full bg-teal-400" />
-              <span className="ml-2 text-xs text-zinc-400">vibexcode/workflow.ts</span>
-            </div>
-            <div className="space-y-3 font-mono text-sm">
-              {workflow.map((line, index) => (
-                <motion.div
-                  key={line}
-                  initial={{ opacity: 0, x: -10 }}
-                  whileInView={{ opacity: 1, x: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: index * 0.1 }}
-                  className="flex items-start gap-3 rounded-xl bg-white/6 px-3 py-3"
-                >
-                  <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-teal-300" />
-                  <span>{line}</span>
-                </motion.div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        <section className="border-t border-zinc-950/10 bg-white/60 px-4 py-16 dark:border-white/10 dark:bg-white/5 sm:px-6 lg:px-8">
-          <div className="mx-auto flex max-w-7xl flex-col items-start justify-between gap-6 md:flex-row md:items-center">
-            <div>
-              <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-zinc-600 dark:text-zinc-300">
-                <Braces className="h-4 w-4 text-rose-500" />
-                Ready when you are
               </div>
-              <h2 className="text-3xl font-black">Make your next coding session feel effortless.</h2>
             </div>
-            <Link
-              href={primaryHref}
-              className="inline-flex items-center justify-center gap-2 rounded-xl bg-zinc-950 px-5 py-3 text-sm font-bold text-white shadow-xl shadow-teal-500/20 transition hover:-translate-y-0.5 dark:bg-white dark:text-zinc-950"
+
+            <motion.aside
+              initial={{ opacity: 0, y: 24, scale: 0.98 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              transition={{ delay: 0.45, duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
+              className="hero-reveal relative mx-auto w-full max-w-[420px] rounded-3xl border border-white/12 bg-white/[0.075] p-3 shadow-[0_24px_100px_rgba(0,0,0,0.45),inset_0_1px_0_rgba(255,255,255,0.18)] backdrop-blur-3xl"
             >
-              {primaryLabel}
-              <Users className="h-4 w-4" />
-            </Link>
+              <div className="absolute -inset-px rounded-3xl bg-gradient-to-br from-cyan-300/24 via-transparent to-violet-400/24 opacity-80" />
+              <div className="relative overflow-hidden rounded-[1.35rem] border border-white/10 bg-[#071018]/72">
+                <div className="flex items-center justify-between border-b border-white/10 px-5 py-4">
+                  <div className="flex items-center gap-2">
+                    <span className="h-2.5 w-2.5 rounded-full bg-rose-400" />
+                    <span className="h-2.5 w-2.5 rounded-full bg-amber-300" />
+                    <span className="h-2.5 w-2.5 rounded-full bg-emerald-300" />
+                  </div>
+                  <div className="font-mono text-xs text-slate-400">vibex.flow</div>
+                </div>
+
+                <div className="space-y-3 p-4">
+                  {heroLinks.map((item, index) => {
+                    const Icon = item.icon;
+                    return (
+                      <Link
+                        key={item.label}
+                        href={item.href}
+                        className="group relative flex min-h-[74px] items-center gap-4 overflow-hidden rounded-2xl border border-white/8 bg-white/[0.045] px-4 transition duration-300 hover:-translate-y-0.5 hover:border-cyan-200/35 hover:bg-white/[0.09] hover:shadow-[0_0_40px_rgba(0,229,255,0.14)]"
+                      >
+                        <span className={`absolute inset-0 bg-gradient-to-r ${item.glow} opacity-0 blur-xl transition duration-300 group-hover:opacity-100`} />
+                        <span className="relative flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-white/12 bg-white/[0.08] text-cyan-200">
+                          <Icon className="h-5 w-5" />
+                        </span>
+                        <span className="relative min-w-0">
+                          <span className="block text-base font-bold text-white">{item.label}</span>
+                          <span className="mt-1 block truncate font-mono text-xs text-slate-400">
+                            {index === 0 ? "solve()" : index === 1 ? "run.preview()" : index === 2 ? "sync.team()" : "ask.ai()"}
+                          </span>
+                        </span>
+                        <ArrowRight className="relative ml-auto h-4 w-4 text-slate-500 transition group-hover:translate-x-0.5 group-hover:text-cyan-200" />
+                      </Link>
+                    );
+                  })}
+                </div>
+              </div>
+            </motion.aside>
+          </div>
+
+          <div className="relative z-10 mx-auto mt-3 grid max-w-[1380px] gap-3 sm:grid-cols-3">
+            {signals.map((item) => {
+              const Icon = item.icon;
+              return (
+                <motion.div
+                  key={item.label}
+                  initial={{ opacity: 0, y: 18 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  className="rounded-2xl border border-white/10 bg-white/[0.045] px-5 py-4 backdrop-blur-2xl"
+                >
+                  <div className="flex items-center gap-3">
+                    <Icon className="h-5 w-5 text-cyan-200" />
+                    <div>
+                      <p className="text-sm font-semibold text-white">{item.value}</p>
+                      <p className="text-xs text-slate-400">{item.label}</p>
+                    </div>
+                  </div>
+                </motion.div>
+              );
+            })}
+          </div>
+        </section>
+
+        <section className="relative bg-[#050505] px-4 pb-24 text-white sm:px-6 lg:px-8">
+          <div className="mx-auto max-w-[1380px] rounded-3xl border border-white/10 bg-white/[0.045] p-6 backdrop-blur-2xl sm:p-8">
+            <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
+              <div>
+                <div className="mb-3 inline-flex items-center gap-2 text-sm font-semibold text-cyan-200">
+                  <Braces className="h-4 w-4" />
+                  Built for the midnight build session
+                </div>
+                <h2 className="max-w-2xl text-3xl font-black tracking-normal sm:text-4xl">
+                  Problems, playgrounds, people, and AI stay in the same creative orbit.
+                </h2>
+              </div>
+              <Link
+                href="/community"
+                className="inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl border border-white/12 bg-white/[0.08] px-5 font-semibold transition hover:border-cyan-200/40 hover:bg-white/[0.12]"
+              >
+                Explore Community
+                <ArrowRight className="h-4 w-4" />
+              </Link>
+            </div>
           </div>
         </section>
       </main>

@@ -207,18 +207,20 @@ export default function ProblemsPage() {
   return (
     <>
       <Navbar />
-      <div className="min-h-screen px-6 py-10 dark:bg-[#020612] text-gray-900 dark:text-gray-200 transition-colors duration-300">
-        <div className="max-w-5xl mx-auto">
+      <div className="min-h-screen px-6 py-10 vibe-shell text-gray-900 dark:text-gray-200 transition-colors duration-300">
+        <div className="vibe-atmosphere" aria-hidden="true" />
+        <div className="vibe-grid" aria-hidden="true" />
+        <div className="relative z-10 max-w-5xl mx-auto">
           <div className="text-center mb-8">
             <h1 className="text-4xl font-bold mb-3">Problems List</h1>
-            <p className="text-gray-600 dark:text-gray-400">
+            <p className="text-gray-600 dark:text-gray-300">
               Explore and solve programming challenges from the community
             </p>
           </div>
 
           {!loading && !error && questions.length > 0 && (
             <div className="mb-8 space-y-4">
-              <div className="bg-white dark:bg-zinc-800 rounded-2xl shadow-[0_4px_20px_rgba(128,0,255,0.08)] p-4 flex flex-col sm:flex-row gap-3">
+              <div className="vibe-panel p-4 flex flex-col sm:flex-row gap-3">
                 {/* Search Input */}
                 <div className="relative flex-1">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
@@ -227,7 +229,7 @@ export default function ProblemsPage() {
                     placeholder="Search by title, description, or tags..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full pl-10 pr-3 py-2.5 rounded-xl bg-gray-50 dark:bg-zinc-900 border border-transparent focus:border-purple-500 focus:ring-2 focus:ring-purple-500/30 outline-none transition text-sm"
+                    className="w-full pl-10 pr-3 py-2.5 rounded-xl bg-white/80 dark:bg-zinc-900/80 border border-transparent focus:border-purple-500 focus:ring-2 focus:ring-purple-500/30 outline-none transition text-sm"
                   />
                 </div>
 
@@ -238,8 +240,8 @@ export default function ProblemsPage() {
                     onClick={() => setShowTagDropdown((v) => !v)}
                     className={`w-full flex items-center gap-2 px-3 py-2.5 rounded-xl border text-sm font-medium transition ${
                       selectedTag
-                        ? "bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-200 border-purple-300 dark:border-purple-700"
-                        : "bg-gray-50 dark:bg-zinc-900 text-gray-700 dark:text-gray-200 border-transparent hover:border-gray-300 dark:hover:border-zinc-700"
+                        ? "bg-purple-100/80 dark:bg-purple-900/30 text-purple-700 dark:text-purple-200 border-purple-300 dark:border-purple-700"
+                        : "bg-white/80 dark:bg-zinc-900/80 text-gray-700 dark:text-gray-200 border-transparent hover:border-gray-300 dark:hover:border-zinc-700"
                     }`}
                   >
                     <Tag className="w-4 h-4 shrink-0" />
@@ -248,11 +250,10 @@ export default function ProblemsPage() {
                     </span>
                     <ChevronDown className="w-4 h-4 shrink-0 opacity-70" />
                   </button>
-
                   {showTagDropdown && (
                     <div
                       ref={tagDropdownRef}
-                      className="absolute left-0 right-0 mt-2 bg-white dark:bg-[#1a1a1d] border border-gray-300 dark:border-gray-600 rounded-xl shadow-lg z-20"
+                      className="absolute left-0 right-0 mt-2 vibe-card p-0 z-20"
                     >
                       <input
                         autoFocus
@@ -260,7 +261,7 @@ export default function ProblemsPage() {
                         value={tagSearch}
                         onChange={(e) => setTagSearch(e.target.value)}
                         placeholder="Search tags..."
-                        className="w-full p-2 border-b border-gray-300 dark:border-gray-700 rounded-t-xl bg-gray-50 dark:bg-[#23232c] text-sm outline-none"
+                        className="w-full p-2 border-b border-gray-300 dark:border-gray-700 rounded-t-xl bg-white/80 dark:bg-zinc-900/80 text-sm outline-none"
                       />
                       <div className="max-h-56 overflow-y-auto">
                         {filteredTags.length === 0 ? (
@@ -311,7 +312,7 @@ export default function ProblemsPage() {
                   <select
                     value={selectedDifficulty}
                     onChange={(e) => setSelectedDifficulty(e.target.value)}
-                    className="w-full pl-10 pr-8 py-2.5 rounded-xl bg-gray-50 dark:bg-zinc-900 border border-transparent hover:border-gray-300 dark:hover:border-zinc-700 text-gray-700 dark:text-gray-200 focus:border-purple-500 focus:ring-2 focus:ring-purple-500/30 outline-none transition text-sm font-medium appearance-none cursor-pointer"
+                    className="w-full pl-10 pr-8 py-2.5 rounded-xl bg-white/80 dark:bg-zinc-900/80 border border-transparent hover:border-gray-300 dark:hover:border-zinc-700 text-gray-700 dark:text-gray-200 focus:border-purple-500 focus:ring-2 focus:ring-purple-500/30 outline-none transition text-sm font-medium appearance-none cursor-pointer"
                   >
                     <option value="">All difficulties</option>
                     <option value="easy">Easy</option>
@@ -323,7 +324,7 @@ export default function ProblemsPage() {
               </div>
 
               {/* Filters & Stats */}
-              <div className="flex justify-between items-center text-sm text-gray-600 dark:text-gray-400">
+              <div className="flex justify-between items-center text-sm text-gray-600 dark:text-gray-300">
                 <div className="flex items-center gap-4">
                   <span>
                     Showing {filteredQuestions.length} of {questions.length}{" "}
@@ -332,7 +333,7 @@ export default function ProblemsPage() {
                   {(searchTerm || selectedTag || selectedDifficulty) && (
                     <button
                       onClick={clearFilters}
-                      className="text-blue-600 dark:text-blue-400 hover:underline"
+                      className="text-blue-600 dark:text-blue-300 hover:underline"
                     >
                       Clear filters
                     </button>
@@ -340,7 +341,7 @@ export default function ProblemsPage() {
                 </div>
                 <div className="flex gap-2 items-center">
                   {selectedTag && (
-                    <span className="bg-blue-100 dark:bg-blue-800 text-blue-800 dark:text-blue-200 px-3 py-1 rounded-full">
+                    <span className="vibe-chip text-blue-800 dark:text-blue-200">
                       Tag: {selectedTag}
                     </span>
                   )}
@@ -361,7 +362,7 @@ export default function ProblemsPage() {
           {/* Loading State */}
           {loading && (
             <div className="text-center py-12">
-              <div className="inline-flex items-center gap-3">
+              <div className="inline-flex items-center gap-3 vibe-card px-6 py-4">
                 {/* Spinner SVG */}
                 <svg
                   className="animate-spin h-6 w-6 text-blue-600"
@@ -390,15 +391,15 @@ export default function ProblemsPage() {
           {/* Error State */}
           {error && (
             <div className="text-center py-12">
-              <div className="max-w-md mx-auto">
+              <div className="max-w-md mx-auto vibe-card p-6">
                 <div className="text-red-500 text-6xl mb-4">⚠️</div>
                 <h2 className="text-xl font-semibold mb-2">
                   Oops! Something went wrong
                 </h2>
-                <p className="text-gray-600 dark:text-gray-400 mb-6">{error}</p>
+                <p className="text-gray-600 dark:text-gray-300 mb-6">{error}</p>
                 <button
                   onClick={retryFetch}
-                  className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg transition-colors"
+                  className="vibe-button px-6 py-2"
                 >
                   Try Again
                 </button>
@@ -409,13 +410,15 @@ export default function ProblemsPage() {
           {/* Empty State */}
           {!loading && !error && questions.length === 0 && (
             <div className="text-center py-12">
-              <div className="text-6xl mb-4">📝</div>
-              <h2 className="text-2xl font-semibold mb-2">
-                No problems available yet
-              </h2>
-              <p className="text-gray-600 dark:text-gray-400">
-                Check back soon — new challenges are added regularly.
-              </p>
+              <div className="vibe-card inline-block px-8 py-6">
+                <div className="text-6xl mb-4">📝</div>
+                <h2 className="text-2xl font-semibold mb-2">
+                  No problems available yet
+                </h2>
+                <p className="text-gray-600 dark:text-gray-300">
+                  Check back soon — new challenges are added regularly.
+                </p>
+              </div>
             </div>
           )}
 
@@ -425,19 +428,21 @@ export default function ProblemsPage() {
             questions.length > 0 &&
             filteredQuestions.length === 0 && (
               <div className="text-center py-12">
-                <div className="text-4xl mb-4">🔍</div>
-                <h2 className="text-xl font-semibold mb-2">
-                  No questions found
-                </h2>
-                <p className="text-gray-600 dark:text-gray-400 mb-4">
-                  Try adjusting your search or filter criteria
-                </p>
-                <button
-                  onClick={clearFilters}
-                  className="text-blue-600 dark:text-blue-400 hover:underline"
-                >
-                  Clear all filters
-                </button>
+                <div className="vibe-card inline-block px-8 py-6">
+                  <div className="text-4xl mb-4">🔍</div>
+                  <h2 className="text-xl font-semibold mb-2">
+                    No questions found
+                  </h2>
+                  <p className="text-gray-600 dark:text-gray-300 mb-4">
+                    Try adjusting your search or filter criteria
+                  </p>
+                  <button
+                    onClick={clearFilters}
+                    className="text-blue-600 dark:text-blue-300 hover:underline"
+                  >
+                    Clear all filters
+                  </button>
+                </div>
               </div>
             )}
 
@@ -449,10 +454,7 @@ export default function ProblemsPage() {
                 const showExpandButton = q.description.length > 200;
 
                 return (
-                  <article
-                    key={q._id}
-                    className="p-6 border border-gray-200 dark:border-gray-700 rounded-xl bg-white dark:bg-[#1a1a1d] shadow-lg hover:shadow-xl transition-all duration-200 hover:border-gray-300 dark:hover:border-gray-600"
-                  >
+                  <article key={q._id} className="vibe-card p-6">
                     {/* Header */}
                     <div className="flex justify-between items-start mb-4">
                       <div className="flex items-center gap-3">
@@ -472,7 +474,7 @@ export default function ProblemsPage() {
                         >
                           {q.difficulty || "easy"}
                         </span>
-                        <h2 className="text-xl font-semibold text-blue-600 dark:text-blue-400 leading-tight">
+                        <h2 className="text-xl font-semibold text-blue-600 dark:text-blue-300 leading-tight">
                           {q.title}
                         </h2>
                         {solvedSet.has(q._id) && (
@@ -511,13 +513,13 @@ export default function ProblemsPage() {
 
                     {/* Additional Details (when expanded) */}
                     {isExpanded && (
-                      <div className="space-y-4 mb-4 p-4 bg-gray-50 dark:bg-[#2a2a2f] rounded-lg">
+                      <div className="space-y-4 mb-4 p-4 vibe-panel">
                         {q.testcases && (
                           <div>
                             <h4 className="font-semibold text-sm mb-2 text-gray-800 dark:text-gray-200">
                               Test Cases:
                             </h4>
-                            <pre className="text-sm text-gray-600 dark:text-gray-400 whitespace-pre-wrap bg-gray-100 dark:bg-gray-800 p-3 rounded overflow-auto">
+                            <pre className="text-sm text-gray-600 dark:text-gray-300 whitespace-pre-wrap bg-white/80 dark:bg-zinc-900/80 p-3 rounded overflow-auto">
                               {q.testcases}
                             </pre>
                           </div>
@@ -528,7 +530,7 @@ export default function ProblemsPage() {
                             <h4 className="font-semibold text-sm mb-2 text-gray-800 dark:text-gray-200">
                               Solutions:
                             </h4>
-                            <pre className="text-sm text-gray-600 dark:text-gray-400 whitespace-pre-wrap bg-gray-100 dark:bg-gray-800 p-3 rounded overflow-auto">
+                            <pre className="text-sm text-gray-600 dark:text-gray-300 whitespace-pre-wrap bg-white/80 dark:bg-zinc-900/80 p-3 rounded overflow-auto">
                               {q.solutions}
                             </pre>
                           </div>
@@ -545,11 +547,11 @@ export default function ProblemsPage() {
                             onClick={() =>
                               setSelectedTag(selectedTag === tag ? "" : tag)
                             }
-                            className={`text-xs px-3 py-1 rounded-full font-medium transition-colors ${
+                            className={
                               selectedTag === tag
-                                ? "bg-blue-200 dark:bg-blue-700 text-blue-900 dark:text-blue-100"
-                                : "bg-blue-100 dark:bg-blue-800 text-blue-800 dark:text-blue-200 hover:bg-blue-200 dark:hover:bg-blue-700"
-                            }`}
+                                ? "vibe-chip text-blue-900 dark:text-blue-100"
+                                : "vibe-chip text-blue-800 dark:text-blue-200 hover:scale-[1.02]"
+                            }
                           >
                             {tag}
                           </button>
@@ -561,7 +563,7 @@ export default function ProblemsPage() {
                     <div className="mt-4 flex justify-end">
                       <a
                         href={`/playground?id=${q._id}`}
-                        className="inline-block bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg font-semibold transition"
+                        className="inline-flex items-center justify-center px-5 py-2 font-semibold vibe-button"
                       >
                         Solve
                       </a>
