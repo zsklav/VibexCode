@@ -189,7 +189,7 @@ export default function Home() {
 
       <Navbar />
 
-      <main className="relative z-10 mx-auto w-full max-w-[1600px] px-6 pb-16 pt-24 sm:px-8 lg:px-14">
+      <main className="relative z-10 w-full px-6 pb-16 pt-24 sm:px-8 lg:px-14">
         <section className="relative min-h-[calc(100svh-7rem)] overflow-hidden">
           <div className="relative z-10 grid min-h-[calc(100svh-7rem)] items-center gap-10 py-6 sm:py-8 lg:grid-cols-[0.86fr_1.14fr] lg:py-14">
             <div className="max-w-3xl">
