@@ -168,10 +168,10 @@ export default function CommunityPage() {
   }
 
   const sidebar = (
-    <aside className="w-full md:w-64 shrink-0 bg-white dark:bg-zinc-900 md:border-r border-gray-200 dark:border-zinc-800 flex flex-col">
-      <div className="p-4 border-b border-gray-200 dark:border-zinc-800">
-        <h2 className="text-lg font-bold">Forums</h2>
-        <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+    <aside className="w-full md:w-64 shrink-0 bg-white/[0.02] backdrop-blur-xl md:border-r border-white/[0.07] flex flex-col">
+      <div className="p-4 border-b border-white/[0.07]">
+        <h2 className="text-lg font-black tracking-tight">Forums</h2>
+        <p className="text-xs text-slate-400 mt-0.5">
           {forums.length} channels
         </p>
       </div>
@@ -185,16 +185,16 @@ export default function CommunityPage() {
                   setSelected(forum.key);
                   setMobileSidebarOpen(false);
                 }}
-                className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition text-left
+                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all text-left
                   ${
                     isSelected
-                      ? "bg-gradient-to-r from-blue-500/10 to-purple-500/10 text-purple-700 dark:text-purple-300"
-                      : "text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-zinc-800"
+                      ? "bg-gradient-to-r from-cyan-400/15 to-violet-500/15 text-white border border-cyan-300/25 shadow-[0_0_22px_rgba(0,229,255,0.12)]"
+                      : "text-slate-400 border border-transparent hover:bg-white/[0.05] hover:text-white"
                   }`}
               >
                 <span
                   className={
-                    isSelected ? "text-purple-600" : "text-gray-400"
+                    isSelected ? "text-cyan-300" : "text-slate-500"
                   }
                 >
                   {forum.icon}
@@ -226,8 +226,8 @@ export default function CommunityPage() {
         )}
 
         {/* Main chat panel */}
-        <main className="flex-1 flex flex-col overflow-hidden bg-white dark:bg-zinc-900">
-          <header className="px-4 md:px-6 py-3 border-b border-gray-200 dark:border-zinc-800 flex items-center gap-3">
+        <main className="flex-1 flex flex-col overflow-hidden">
+          <header className="px-4 md:px-6 py-3 border-b border-white/[0.07] flex items-center gap-3">
             {isMobile && (
               <button
                 onClick={() => setMobileSidebarOpen(true)}
@@ -237,7 +237,7 @@ export default function CommunityPage() {
                 ☰
               </button>
             )}
-            <div className="text-purple-600 text-xl">{activeForum.icon}</div>
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-gradient-to-br from-cyan-400/20 to-violet-500/20 text-cyan-300">{activeForum.icon}</div>
             <div className="min-w-0 flex-1">
               <h1 className="text-lg font-bold leading-tight">
                 #{activeForum.key}
@@ -262,9 +262,9 @@ export default function CommunityPage() {
 
         {/* Members rail (desktop only) — fills the otherwise-empty right side */}
         {!isMobile && (
-          <aside className="w-60 shrink-0 bg-white dark:bg-zinc-900 border-l border-gray-200 dark:border-zinc-800 flex flex-col">
-            <div className="p-4 border-b border-gray-200 dark:border-zinc-800">
-              <h3 className="text-sm font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">
+          <aside className="w-60 shrink-0 bg-white/[0.02] backdrop-blur-xl border-l border-white/[0.07] flex flex-col">
+            <div className="p-4 border-b border-white/[0.07]">
+              <h3 className="text-sm font-bold uppercase tracking-wider text-slate-400">
                 Members
               </h3>
               <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
@@ -324,7 +324,7 @@ const MemberGroup = ({
             <li key={m._id} className="group relative">
               <a
                 href={`/u/${encodeURIComponent(m.email)}`}
-                className={`flex items-center gap-2 px-2 py-1.5 rounded hover:bg-gray-100 dark:hover:bg-zinc-800 ${
+                className={`flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-white/[0.06] ${
                   muted ? "opacity-60" : ""
                 }`}
               >
@@ -337,11 +337,11 @@ const MemberGroup = ({
                   />
                 </div>
                 <span className="text-sm truncate flex-1">{display}</span>
-                <span className="rounded border border-gray-200 px-1.5 py-0.5 text-[10px] text-gray-500 dark:border-zinc-700">
+                <span className="rounded border border-white/10 px-1.5 py-0.5 text-[10px] text-slate-400">
                   {m.presenceDevice || "Desktop"}
                 </span>
               </a>
-              <div className="pointer-events-none absolute right-full top-0 z-20 mr-2 hidden w-56 rounded-lg border border-gray-200 bg-white p-3 text-xs shadow-xl group-hover:block dark:border-zinc-700 dark:bg-zinc-900">
+              <div className="pointer-events-none absolute right-full top-0 z-20 mr-2 hidden w-56 rounded-lg border border-white/10 bg-[#0a0f1c]/90 p-3 text-xs shadow-xl backdrop-blur-xl group-hover:block">
                 <p className="font-semibold text-gray-900 dark:text-white">
                   {display}
                 </p>
@@ -349,7 +349,7 @@ const MemberGroup = ({
                   {m.status || "Offline"} on {m.presenceDevice || "Desktop"}
                 </p>
                 {m.customStatus && (
-                  <p className="mt-2 rounded bg-gray-50 px-2 py-1 text-gray-700 dark:bg-zinc-800 dark:text-gray-200">
+                  <p className="mt-2 rounded bg-white/[0.06] px-2 py-1 text-slate-200">
                     {m.customStatus}
                   </p>
                 )}

@@ -738,7 +738,7 @@ export default function ChatWindow({
               href={url}
               target="_blank"
               rel="noreferrer"
-              className="flex items-center gap-3 rounded-lg border border-black/10 bg-white/70 p-3 text-sm hover:bg-white dark:border-white/10 dark:bg-zinc-900/70"
+              className="flex items-center gap-3 rounded-lg border border-white/10 bg-white/[0.06] p-3 text-sm hover:bg-white/[0.1]"
             >
               <FileIcon file={file} />
               <span className="min-w-0 flex-1 truncate">{file.name}</span>
@@ -763,7 +763,7 @@ export default function ChatWindow({
         if (event.dataTransfer.files.length) handleUpload(event.dataTransfer.files);
       }}
     >
-      <div className="border-b border-gray-200 px-4 py-2 dark:border-zinc-800">
+      <div className="border-b border-white/[0.07] px-4 py-2">
         <div className="mx-auto flex max-w-4xl items-center gap-1">
           {(["chat", "files", "media", "links"] as Tab[]).map((item) => (
             <button
@@ -772,8 +772,8 @@ export default function ChatWindow({
               className={cn(
                 "rounded-md px-3 py-1.5 text-sm font-medium capitalize transition",
                 tab === item
-                  ? "bg-gray-900 text-white dark:bg-white dark:text-zinc-900"
-                  : "text-gray-500 hover:bg-gray-100 dark:hover:bg-zinc-800"
+                  ? "bg-white/10 text-white border border-white/15 shadow-[inset_0_1px_0_rgba(255,255,255,0.12)]"
+                  : "text-slate-400 hover:bg-white/[0.06] hover:text-white"
               )}
             >
               {item}
@@ -786,7 +786,7 @@ export default function ChatWindow({
         <div className="mx-auto flex min-h-full w-full max-w-4xl flex-col px-4 py-5">
           {notice && (
             <div className="fixed left-1/2 top-20 z-50 w-[min(92vw,36rem)] -translate-x-1/2">
-              <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 shadow-lg dark:border-red-800/60 dark:bg-red-900/30 dark:text-red-200">
+              <div className="rounded-lg border border-red-500/40 bg-red-950/50 px-4 py-3 text-sm text-red-200 shadow-lg backdrop-blur">
                 {notice}
               </div>
             </div>
@@ -795,14 +795,14 @@ export default function ChatWindow({
           {tab === "chat" && (
             <>
               {!loading && (
-                <div className="mb-5 border-b border-gray-200 py-8 text-center dark:border-zinc-800">
-                  <div className="mb-3 inline-flex h-14 w-14 items-center justify-center rounded-xl bg-gray-900 text-2xl font-bold text-white dark:bg-white dark:text-zinc-950">
+                <div className="mb-5 border-b border-white/[0.07] py-10 text-center">
+                  <div className="mb-4 inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-cyan-300 to-violet-500 text-3xl font-black text-slate-950 shadow-[0_0_45px_rgba(0,229,255,0.3)]">
                     #
                   </div>
-                  <h2 className="mb-1 text-2xl font-bold">
+                  <h2 className="mb-1.5 text-2xl font-black tracking-tight">
                     Welcome to #{channelName || conversationId}
                   </h2>
-                  <p className="mx-auto max-w-md text-sm text-gray-500 dark:text-gray-400">
+                  <p className="mx-auto max-w-md text-sm text-slate-400">
                     {channelDescription || "This is the beginning of the conversation."}
                   </p>
                 </div>
@@ -813,10 +813,10 @@ export default function ChatWindow({
                   Loading messages...
                 </p>
               ) : visibleMessages.length === 0 ? (
-                <div className="flex flex-1 flex-col items-center justify-center py-12 text-center">
-                  <p className="font-medium text-gray-500 dark:text-gray-400">
-                    No messages yet. Start the thread.
-                  </p>
+                <div className="flex flex-1 flex-col items-center justify-center gap-2 py-12 text-center">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-full border border-white/10 bg-white/[0.04] text-xl">💬</div>
+                  <p className="font-semibold text-slate-300">No messages yet</p>
+                  <p className="text-sm text-slate-500">Be the first to start the thread.</p>
                 </div>
               ) : (
                 <AnimatePresence initial={false}>
@@ -842,11 +842,11 @@ export default function ChatWindow({
                       <div key={message._id}>
                         {showDate && (
                           <div className="sticky top-2 z-10 my-4 flex items-center gap-3 text-xs font-semibold text-gray-400">
-                            <span className="h-px flex-1 bg-gray-200 dark:bg-zinc-800" />
-                            <span className="rounded-full bg-white px-3 py-1 dark:bg-zinc-900">
+                            <span className="h-px flex-1 bg-white/10" />
+                            <span className="rounded-full border border-white/10 bg-white/[0.06] px-3 py-1">
                               {dateLabel(message.createdAt)}
                             </span>
-                            <span className="h-px flex-1 bg-gray-200 dark:bg-zinc-800" />
+                            <span className="h-px flex-1 bg-white/10" />
                           </div>
                         )}
 
@@ -899,7 +899,7 @@ export default function ChatWindow({
                                   initial={{ opacity: 0, y: 4 }}
                                   animate={{ opacity: 1, y: 0 }}
                                   className={cn(
-                                    "absolute -top-9 z-20 flex gap-1 rounded-lg border border-gray-200 bg-white p-1 shadow-lg dark:border-zinc-700 dark:bg-zinc-800",
+                                    "absolute -top-9 z-20 flex gap-1 rounded-lg border border-white/10 bg-[#0a0f1c]/95 p-1 shadow-lg backdrop-blur-xl",
                                     isSelf ? "right-2" : "left-2"
                                   )}
                                 >
@@ -907,7 +907,7 @@ export default function ChatWindow({
                                     <button
                                       key={emoji}
                                       onClick={() => toggleReaction(message._id, emoji)}
-                                      className="rounded px-1.5 py-1 text-sm hover:bg-gray-100 dark:hover:bg-zinc-700"
+                                      className="rounded px-1.5 py-1 text-sm hover:bg-white/10"
                                     >
                                       {emoji}
                                     </button>
@@ -919,10 +919,10 @@ export default function ChatWindow({
                                 className={cn(
                                   "rounded-2xl px-3.5 py-2 text-sm leading-relaxed shadow-sm",
                                   isSelf
-                                    ? "rounded-br-md bg-gray-900 text-white dark:bg-white dark:text-zinc-950"
-                                    : "rounded-bl-md bg-gray-100 text-gray-900 dark:bg-zinc-800 dark:text-gray-100",
+                                    ? "rounded-br-md border border-cyan-300/25 bg-cyan-400/15 text-white"
+                                    : "rounded-bl-md border border-white/[0.08] bg-white/[0.05] text-slate-100",
                                   message.ghost &&
-                                    "border border-purple-400/40 bg-purple-50 text-purple-950 dark:bg-purple-950/30 dark:text-purple-50",
+                                    "border border-violet-400/40 bg-violet-500/15 text-violet-100",
                                   message.deleted && "italic opacity-60"
                                 )}
                               >
@@ -995,16 +995,16 @@ export default function ChatWindow({
                                     isSelf ? "-left-32" : "-right-40"
                                   )}
                                 >
-                                  <button title="Reply" className="rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-zinc-800">
+                                  <button title="Reply" className="rounded p-1 text-slate-400 hover:bg-white/10 hover:text-white">
                                     <Reply className="h-4 w-4" />
                                   </button>
-                                  <button title="React" onClick={() => setQuickBarFor(message._id)} className="rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-zinc-800">
+                                  <button title="React" onClick={() => setQuickBarFor(message._id)} className="rounded p-1 text-slate-400 hover:bg-white/10 hover:text-white">
                                     <SmilePlus className="h-4 w-4" />
                                   </button>
-                                  <button title="Copy" onClick={() => navigator.clipboard?.writeText(message.body || "")} className="rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-zinc-800">
+                                  <button title="Copy" onClick={() => navigator.clipboard?.writeText(message.body || "")} className="rounded p-1 text-slate-400 hover:bg-white/10 hover:text-white">
                                     <Copy className="h-4 w-4" />
                                   </button>
-                                  <button title="Bookmark" onClick={() => toggleBookmark(message._id)} className={cn("rounded p-1 hover:bg-gray-100 dark:hover:bg-zinc-800", bookmarked ? "text-amber-500" : "text-gray-400 hover:text-gray-700")}>
+                                  <button title="Bookmark" onClick={() => toggleBookmark(message._id)} className={cn("rounded p-1 hover:bg-white/10", bookmarked ? "text-amber-500" : "text-slate-400 hover:text-white")}>
                                     <Bookmark className="h-4 w-4" />
                                   </button>
                                   {isSelf && (
@@ -1018,7 +1018,7 @@ export default function ChatWindow({
                                             : message._id
                                         );
                                       }}
-                                      className="rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-zinc-800"
+                                      className="rounded p-1 text-slate-400 hover:bg-white/10 hover:text-white"
                                     >
                                       <MoreVertical className="h-4 w-4" />
                                     </button>
@@ -1027,7 +1027,7 @@ export default function ChatWindow({
                               )}
 
                               {openMenuFor === message._id && (
-                                <div className="absolute right-full top-0 z-30 mr-1 overflow-hidden rounded-lg border border-gray-200 bg-white shadow-lg dark:border-zinc-700 dark:bg-zinc-800">
+                                <div className="absolute right-full top-0 z-30 mr-1 overflow-hidden rounded-lg border border-white/10 bg-[#0a0f1c]/95 shadow-lg backdrop-blur-xl">
                                   <button
                                     onClick={() => {
                                       setMessages((prev) =>
@@ -1043,13 +1043,13 @@ export default function ChatWindow({
                                       }));
                                       setOpenMenuFor(null);
                                     }}
-                                    className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-zinc-700"
+                                    className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-white/10"
                                   >
                                     <Pencil className="h-3.5 w-3.5" /> Edit
                                   </button>
                                   <button
                                     onClick={() => handleDelete(message._id)}
-                                    className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20"
+                                    className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-red-400 hover:bg-red-500/15"
                                   >
                                     <Trash2 className="h-3.5 w-3.5" /> Delete
                                   </button>
@@ -1066,8 +1066,8 @@ export default function ChatWindow({
                                     className={cn(
                                       "rounded-full border px-2 py-0.5 text-xs transition",
                                       users.includes(selfId)
-                                        ? "border-purple-300 bg-purple-100 text-purple-700 dark:border-purple-700 dark:bg-purple-950 dark:text-purple-200"
-                                        : "border-gray-200 bg-gray-50 text-gray-600 dark:border-zinc-700 dark:bg-zinc-800 dark:text-gray-300"
+                                        ? "border-cyan-400/50 bg-cyan-500/20 text-cyan-200"
+                                        : "border-white/10 bg-white/[0.06] text-slate-400"
                                     )}
                                   >
                                     {emoji} {users.length}
@@ -1107,7 +1107,7 @@ export default function ChatWindow({
                     href={file.secureUrl || file.url}
                     target="_blank"
                     rel="noreferrer"
-                    className="flex items-center gap-3 rounded-lg border border-gray-200 p-3 hover:bg-gray-50 dark:border-zinc-800 dark:hover:bg-zinc-800"
+                    className="flex items-center gap-3 rounded-lg border border-white/10 p-3 hover:bg-white/[0.06]"
                   >
                     <FileIcon file={file} />
                     <span className="min-w-0 flex-1 truncate">{file.name}</span>
@@ -1156,7 +1156,7 @@ export default function ChatWindow({
                     href={link.url}
                     target="_blank"
                     rel="noreferrer"
-                    className="flex items-center gap-3 rounded-lg border border-gray-200 p-3 hover:bg-gray-50 dark:border-zinc-800 dark:hover:bg-zinc-800"
+                    className="flex items-center gap-3 rounded-lg border border-white/10 p-3 hover:bg-white/[0.06]"
                   >
                     <LinkIcon className="h-4 w-4 shrink-0" />
                     <span className="min-w-0 flex-1 truncate">{link.url}</span>
@@ -1169,14 +1169,14 @@ export default function ChatWindow({
         </div>
       </div>
 
-      <div className="border-t border-gray-200 bg-white/92 px-4 py-3 backdrop-blur dark:border-zinc-800 dark:bg-zinc-900/92">
+      <div className="border-t border-white/[0.07] bg-[#070b14]/70 px-4 py-3 backdrop-blur-xl">
         <div className="relative mx-auto max-w-4xl">
           {attachments.length > 0 && (
             <div className="mb-2 flex flex-wrap gap-2">
               {attachments.map((file) => (
                 <div
                   key={`${file.name}-${file.url}`}
-                  className="flex max-w-xs items-center gap-2 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-xs dark:border-zinc-800 dark:bg-zinc-800"
+                  className="flex max-w-xs items-center gap-2 rounded-lg border border-white/10 bg-white/[0.06] px-3 py-2 text-xs"
                 >
                   <FileIcon file={file} />
                   <span className="min-w-0 flex-1 truncate">{file.name}</span>
@@ -1201,7 +1201,7 @@ export default function ChatWindow({
           )}
 
           {commandMenuOpen && filteredCommands.length > 0 && (
-            <div className="absolute bottom-full left-12 z-40 mb-2 w-80 overflow-hidden rounded-lg border border-gray-200 bg-white shadow-xl dark:border-zinc-700 dark:bg-zinc-800">
+            <div className="absolute bottom-full left-12 z-40 mb-2 w-80 overflow-hidden rounded-lg border border-white/10 bg-[#0a0f1c]/95 shadow-xl backdrop-blur-xl">
               {filteredCommands.map((command, index) => {
                 const Icon = command.icon;
                 return (
@@ -1214,8 +1214,8 @@ export default function ChatWindow({
                     className={cn(
                       "flex w-full items-center gap-3 px-3 py-2 text-left text-sm",
                       commandIndex === index
-                        ? "bg-purple-50 text-purple-700 dark:bg-purple-950/40 dark:text-purple-200"
-                        : "hover:bg-gray-50 dark:hover:bg-zinc-700"
+                        ? "bg-cyan-500/15 text-cyan-200"
+                        : "hover:bg-white/[0.06]"
                     )}
                   >
                     <Icon className="h-4 w-4" />
@@ -1232,13 +1232,13 @@ export default function ChatWindow({
           )}
 
           {toolsOpen && (
-            <div className="absolute bottom-full left-14 z-40 mb-2 w-64 overflow-hidden rounded-xl border border-gray-200 bg-white p-2 shadow-2xl dark:border-zinc-700 dark:bg-zinc-900">
+            <div className="absolute bottom-full left-14 z-40 mb-2 w-64 overflow-hidden rounded-xl border border-white/10 bg-[#0a0f1c]/95 p-2 shadow-2xl backdrop-blur-xl">
               <button
                 onClick={() => {
                   setWhiteboardOpen(true);
                   setToolsOpen(false);
                 }}
-                className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-zinc-800"
+                className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm hover:bg-white/10"
               >
                 <Pencil className="h-4 w-4 text-purple-500" />
                 <span>
@@ -1251,7 +1251,7 @@ export default function ChatWindow({
                   setPollModalOpen(true);
                   setToolsOpen(false);
                 }}
-                className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-zinc-800"
+                className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm hover:bg-white/10"
               >
                 <Clipboard className="h-4 w-4 text-blue-500" />
                 <span>
@@ -1269,7 +1269,7 @@ export default function ChatWindow({
           )}
 
           {emojiOpen && (
-            <div className="absolute bottom-full right-14 z-40 mb-2 flex gap-1 rounded-xl border border-gray-200 bg-white p-2 shadow-2xl dark:border-zinc-700 dark:bg-zinc-900">
+            <div className="absolute bottom-full right-14 z-40 mb-2 flex gap-1 rounded-xl border border-white/10 bg-[#0a0f1c]/95 p-2 shadow-2xl backdrop-blur-xl">
               {QUICK_REACTIONS.map((emoji) => (
                 <button
                   key={emoji}
@@ -1278,7 +1278,7 @@ export default function ChatWindow({
                     setEmojiOpen(false);
                     textareaRef.current?.focus();
                   }}
-                  className="rounded-lg px-2 py-1.5 text-lg hover:bg-gray-100 dark:hover:bg-zinc-800"
+                  className="rounded-lg px-2 py-1.5 text-lg hover:bg-white/10"
                 >
                   {emoji}
                 </button>
@@ -1299,7 +1299,7 @@ export default function ChatWindow({
             />
             <button
               onClick={() => fileInputRef.current?.click()}
-              className="inline-flex items-center gap-2 rounded-lg p-2.5 text-gray-500 hover:bg-gray-100 hover:text-gray-800 dark:hover:bg-zinc-800 dark:hover:text-white"
+              className="inline-flex items-center gap-2 rounded-lg p-2.5 text-slate-400 hover:bg-white/10 hover:text-white"
               title="Attachments"
             >
               <Paperclip className="h-4 w-4" />
@@ -1307,7 +1307,7 @@ export default function ChatWindow({
             </button>
             <button
               onClick={() => setToolsOpen((value) => !value)}
-              className="inline-flex items-center gap-2 rounded-lg p-2.5 text-gray-500 hover:bg-gray-100 hover:text-gray-800 dark:hover:bg-zinc-800 dark:hover:text-white"
+              className="inline-flex items-center gap-2 rounded-lg p-2.5 text-slate-400 hover:bg-white/10 hover:text-white"
               title="Tools"
             >
               <Wrench className="h-4 w-4" />
@@ -1315,7 +1315,7 @@ export default function ChatWindow({
             </button>
             <button
               onClick={() => setEmojiOpen((value) => !value)}
-              className="inline-flex items-center gap-2 rounded-lg p-2.5 text-gray-500 hover:bg-gray-100 hover:text-gray-800 dark:hover:bg-zinc-800 dark:hover:text-white"
+              className="inline-flex items-center gap-2 rounded-lg p-2.5 text-slate-400 hover:bg-white/10 hover:text-white"
               title="Emoji"
             >
               <SmilePlus className="h-4 w-4" />
@@ -1323,7 +1323,7 @@ export default function ChatWindow({
             </button>
             <button
               onClick={() => setThemeSelectorOpen((value) => !value)}
-              className="rounded-lg p-2.5 text-gray-500 hover:bg-gray-100 hover:text-gray-800 dark:hover:bg-zinc-800 dark:hover:text-white"
+              className="rounded-lg p-2.5 text-slate-400 hover:bg-white/10 hover:text-white"
               title="Chat Appearance"
             >
               <Palette className="h-4 w-4" />
@@ -1333,14 +1333,14 @@ export default function ChatWindow({
               className={cn(
                 "rounded-lg p-2.5 transition",
                 ghostMode
-                  ? "bg-purple-100 text-purple-700 dark:bg-purple-950 dark:text-purple-200"
-                  : "text-gray-500 hover:bg-gray-100 hover:text-gray-800 dark:hover:bg-zinc-800 dark:hover:text-white"
+                  ? "bg-violet-500/20 text-violet-200"
+                  : "text-slate-400 hover:bg-white/10 hover:text-white"
               )}
               title="Ghost Mode"
             >
               <Ghost className="h-4 w-4" />
             </button>
-            <div className="min-w-0 flex-1 rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 focus-within:border-purple-500 focus-within:ring-2 focus-within:ring-purple-500/20 dark:border-zinc-800 dark:bg-zinc-800">
+            <div className="min-w-0 flex-1 rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2 focus-within:border-cyan-300/50 focus-within:ring-2 focus-within:ring-cyan-300/15">
               <textarea
                 ref={textareaRef}
                 placeholder={`Message #${conversationId}`}
@@ -1381,7 +1381,7 @@ export default function ChatWindow({
               <div className="mt-1 flex items-center justify-between text-[11px] text-gray-400">
                 <span>Enter to send • Alt+Enter for new line</span>
                 {ghostMode && (
-                  <span className="inline-flex items-center gap-1 text-purple-500">
+                  <span className="inline-flex items-center gap-1 text-violet-300">
                     <Ghost className="h-3 w-3" />
                     24h
                   </span>
@@ -1394,7 +1394,7 @@ export default function ChatWindow({
                 (!input.trim() && attachments.filter((file) => !file.uploading).length === 0) ||
                 attachments.some((file) => file.uploading)
               }
-              className="rounded-lg bg-gray-900 p-2.5 text-white shadow transition hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-40 dark:bg-white dark:text-zinc-950 dark:hover:bg-zinc-200"
+              className="rounded-lg bg-cyan-300 p-2.5 text-slate-950 shadow-[0_0_20px_rgba(0,229,255,0.25)] transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-40"
               title="Send"
             >
               <Send className="h-4 w-4" />
