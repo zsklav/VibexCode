@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { motion, useScroll, useTransform } from "framer-motion";
+import { motion } from "framer-motion";
 import { useSelector } from "react-redux";
 import {
   ArrowRight,
@@ -22,15 +22,6 @@ import Navbar from "./components/Navbar";
 import authservice from "@/app/auth/firebase-auth";
 import { RootState } from "./store/store";
 
-const orbitItems = [
-  { label: "< />", className: "left-[7%] top-[16%]", drift: -56 },
-  { label: "API", className: "left-[19%] top-[74%]", drift: -34 },
-  { label: "npm", className: "left-[45%] top-[9%]", drift: -48 },
-  { label: "{ }", className: "right-[9%] top-[18%]", drift: -62 },
-  { label: "git", className: "right-[18%] top-[68%]", drift: -42 },
-  { label: "AI", className: "right-[43%] top-[82%]", drift: -30 },
-];
-
 const productLinks = [
   { label: "Problems", href: "/problems", icon: Code2, stat: "50+ routes" },
   { label: "Playground", href: "/playground", icon: Play, stat: "instant run" },
@@ -49,20 +40,6 @@ const flow = [
   { icon: MessageSquare, title: "Stay with context", text: "Ask, discuss, and compare without breaking the thread of what you were building." },
   { icon: Trophy, title: "Ship with momentum", text: "Keep progress visible so every session starts warmer than the last one." },
 ];
-
-function OrbitChip({ item }: { item: (typeof orbitItems)[number] }) {
-  const { scrollYProgress } = useScroll();
-  const y = useTransform(scrollYProgress, [0, 1], [0, item.drift]);
-
-  return (
-    <motion.span
-      style={{ y }}
-      className={`pointer-events-none absolute ${item.className} hidden rounded-full border border-white/10 bg-white/[0.055] px-3 py-1.5 font-mono text-[11px] text-cyan-100/70 shadow-[0_0_28px_rgba(0,229,255,0.1)] backdrop-blur-xl md:inline-flex`}
-    >
-      {item.label}
-    </motion.span>
-  );
-}
 
 function ProductCockpit() {
   return (
@@ -212,12 +189,8 @@ export default function Home() {
 
       <Navbar />
 
-      <main className="relative z-10 w-full px-6 pb-16 pt-24 sm:px-8 lg:px-14">
+      <main className="relative z-10 mx-auto w-full max-w-[1600px] px-6 pb-16 pt-24 sm:px-8 lg:px-14">
         <section className="relative min-h-[calc(100svh-7rem)] overflow-hidden">
-          {orbitItems.map((item) => (
-            <OrbitChip key={`${item.label}-${item.className}`} item={item} />
-          ))}
-
           <div className="relative z-10 grid min-h-[calc(100svh-7rem)] items-center gap-10 py-6 sm:py-8 lg:grid-cols-[0.86fr_1.14fr] lg:py-14">
             <div className="max-w-3xl">
               <motion.div

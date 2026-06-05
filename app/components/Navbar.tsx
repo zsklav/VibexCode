@@ -93,7 +93,7 @@ const Navbar = () => {
 
   return (
     <nav className="fixed top-0 inset-x-0 z-50 pointer-events-none">
-      <div className="pointer-events-auto flex w-full items-center justify-between px-6 py-4 sm:px-8 lg:px-14">
+      <div className="pointer-events-auto mx-auto flex w-full max-w-[1600px] items-center justify-between px-6 py-4 sm:px-8 lg:px-14">
         
         <div className="flex items-center gap-4">
           <button
