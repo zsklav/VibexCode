@@ -8,6 +8,7 @@
 import { notFound } from "next/navigation";
 import { db } from "@/lib/firebase-admin";
 import type { QueryDocumentSnapshot } from "firebase-admin/firestore";
+import Navbar from "@/app/components/Navbar";
 
 interface TopicPageProps {
   params: Promise<{
@@ -50,6 +51,7 @@ export default async function TopicPage({ params }: TopicPageProps) {
 
   return (
     <div className="min-h-screen p-6 text-gray-900 dark:text-white">
+      <Navbar />
       <div className="max-w-3xl mx-auto">
         <h1 className="text-3xl font-bold mb-2 capitalize">{topicName}</h1>
         <p className="mb-6 text-gray-600 dark:text-gray-400">
