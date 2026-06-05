@@ -58,7 +58,7 @@ export default function BookmarksPage() {
   return (
     <div className="min-h-screen text-gray-900 dark:text-white">
       <Navbar />
-      <main className="mx-auto max-w-4xl px-4 py-8">
+      <main className="w-full px-6 sm:px-8 lg:px-14 py-8">
         <div className="mb-6 flex items-center gap-3">
           <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-amber-500/15 text-amber-500">
             <Bookmark className="h-5 w-5" />

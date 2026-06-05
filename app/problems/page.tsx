@@ -210,7 +210,7 @@ export default function ProblemsPage() {
       <div className="min-h-screen px-6 py-10 vibe-shell text-gray-900 dark:text-gray-200 transition-colors duration-300">
         <div className="vibe-atmosphere" aria-hidden="true" />
         <div className="vibe-grid" aria-hidden="true" />
-        <div className="relative z-10 max-w-5xl mx-auto">
+        <div className="relative z-10 w-full">
           <div className="text-center mb-8">
             <h1 className="text-4xl font-bold mb-3">Problems List</h1>
             <p className="text-gray-600 dark:text-gray-300">

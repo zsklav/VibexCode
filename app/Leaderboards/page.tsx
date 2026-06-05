@@ -123,7 +123,7 @@ const LeaderboardsPage = () => {
   return (
     <div className="min-h-screen text-gray-900 dark:text-white">
       <Navbar />
-      <main className="max-w-3xl mx-auto px-4 py-10">
+      <main className="w-full px-6 sm:px-8 lg:px-14 py-10">
         <div className="mb-8">
           <h1 className="text-3xl font-bold mb-2">🏆 Leaderboard</h1>
           <p className="text-gray-600 dark:text-gray-400">

@@ -75,7 +75,7 @@ const AdminHome = () => {
   return (
     <div className="min-h-screen text-gray-900 dark:text-white">
       <Navbar />
-      <main className="max-w-5xl mx-auto px-4 py-10">
+      <main className="w-full px-6 sm:px-8 lg:px-14 py-10">
         <div className="flex items-center gap-3 mb-8">
           <ShieldCheck className="w-7 h-7 text-purple-600" />
           <h1 className="text-3xl font-bold">Admin</h1>

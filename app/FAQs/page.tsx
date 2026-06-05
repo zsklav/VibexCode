@@ -37,7 +37,7 @@ export default function FAQPage() {
     <>
       <Navbar />
       <main className="min-h-screen text-gray-800 dark:text-gray-100 px-4 py-16">
-        <div className="max-w-3xl mx-auto">
+        <div className="w-full px-6 sm:px-8 lg:px-14">
           <h1 className="text-5xl font-bold text-center mb-12">FAQs</h1>
           <div className="space-y-6">
             {faqs.map((faq, index) => {

@@ -84,7 +84,7 @@ const SubmissionsPage = () => {
   return (
     <div className="min-h-screen text-gray-900 dark:text-white">
       <Navbar />
-      <main className="max-w-4xl mx-auto px-4 py-10">
+      <main className="w-full px-6 sm:px-8 lg:px-14 py-10">
         <div className="mb-6">
           <h1 className="text-3xl font-bold">My Submissions</h1>
           <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">

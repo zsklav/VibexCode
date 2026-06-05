@@ -51,7 +51,7 @@ export default function Dashboard() {
     <div className="relative min-h-screen pt-4 pr-4 pl-0">
       <Navbar />
 
-      <main className="mt-8 mx-auto max-w-7xl space-y-8">
+      <main className="mt-8 w-full px-6 sm:px-8 lg:px-14 space-y-8">
         
         {/* Welcome Hero Area */}
         <section className="glass-panel rounded-[32px] p-8 lg:p-12 relative overflow-hidden flex items-center justify-between">

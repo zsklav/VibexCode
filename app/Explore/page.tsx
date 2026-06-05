@@ -169,7 +169,7 @@ export default function ExplorePage() {
       <div className="min-h-screen vibe-shell transition-all">
         <div className="vibe-atmosphere" aria-hidden="true" />
         <div className="vibe-grid" aria-hidden="true" />
-        <main className="relative z-10 max-w-7xl mx-auto p-4 md:p-10 space-y-10">
+        <main className="relative z-10 w-full px-6 sm:px-8 lg:px-14 py-6 md:py-10 space-y-10">
           {/* Header */}
           <div data-aos="fade-down">
             <h2 className="text-3xl md:text-4xl font-bold">
