@@ -209,7 +209,7 @@ export default function CommunityPage() {
   );
 
   return (
-    <div className="h-screen flex flex-col text-gray-900 dark:text-white">
+    <div className="h-screen flex flex-col pt-20 text-gray-900 dark:text-white">
       <Navbar />
 
       <div className="flex flex-1 overflow-hidden">

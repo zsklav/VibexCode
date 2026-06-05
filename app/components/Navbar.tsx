@@ -42,6 +42,8 @@ const Navbar = () => {
   const router = useRouter();
   const pathname = usePathname();
   const isHome = pathname === "/";
+  // Full-height pages (chat/editor) pad themselves; others get a spacer to clear the fixed navbar.
+  const selfManagedTop = isHome || pathname === "/community" || pathname === "/playground";
   const [menuOpen, setMenuOpen] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const profileRef = useRef<HTMLDivElement | null>(null);
@@ -93,6 +95,7 @@ const Navbar = () => {
   };
 
   return (
+    <>
     <nav className={isHome ? "fixed top-0 inset-x-0 z-50 pointer-events-none" : "fixed top-4 inset-x-0 z-50 flex justify-center px-4 pointer-events-none"}>
       <div className={isHome
         ? "pointer-events-auto flex w-full items-center justify-between px-6 py-4 sm:px-8 lg:px-14"
@@ -125,7 +128,7 @@ const Navbar = () => {
                 {isActive && (
                   <motion.div
                     layoutId="navbar-active-pill"
-                    className="absolute inset-0 bg-white shadow-sm border border-black/5 dark:bg-gradient-to-b dark:from-white/10 dark:to-transparent dark:border-white/10 rounded-full dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.2)] -z-10"
+                    className="absolute inset-0 rounded-full bg-white/10 border border-white/15 shadow-[inset_0_1px_0_rgba(255,255,255,0.15)] -z-10"
                     transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
                   />
                 )}
@@ -223,6 +226,8 @@ const Navbar = () => {
         )}
       </AnimatePresence>
     </nav>
+    {!selfManagedTop && <div aria-hidden className="h-20 shrink-0" />}
+    </>
   );
 };
 
