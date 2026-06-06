@@ -142,21 +142,16 @@ export default function Dashboard() {
           </div>
         </section>
 
-        {/* Widgets Grid */}
+        {/* Widgets Grid — each component already renders its own glass card
+            (same as on Explore/Profile), so we drop the extra wrapper here to
+            avoid double-carding. */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start pb-12">
-          {/* We wrap legacy components in glass-cards to make them fit the theme */}
-          <div className="glass-card p-6 overflow-hidden">
-             <Lead />
-          </div>
-          <div className="glass-card p-6 overflow-hidden">
-             <FriendsSection />
-          </div>
-          <div className="glass-card p-6 overflow-hidden">
-             <PersonalTODO />
-          </div>
-          
-          <div className="lg:col-span-3 glass-card p-6">
-             <CommunityConnect />
+          <Lead />
+          <FriendsSection />
+          <PersonalTODO />
+
+          <div className="lg:col-span-3">
+            <CommunityConnect />
           </div>
         </div>
 
